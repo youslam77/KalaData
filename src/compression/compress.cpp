@@ -19,11 +19,11 @@ namespace KalaData::Compression
 		const string& origin,
 		const string& target)
 	{
-		string archivePath = (path(origin) / path(origin).stem()).string() + ".kdat";
+		string archivePath = (path(target) / path(target).stem()).string() + ".kdat";
 		string archiveName = path(archivePath).filename().string();
 
 		KalaDataCore::PrintMessage(
 			"Starting to compress folder '" + origin + "' to archive '" + archiveName + "' in target folder '" + target + "'!\n",
-			MessageType::MESSAGETYPE_SUCCESS);
+			MessageType::MESSAGETYPE_DEBUG);
 	}
 }

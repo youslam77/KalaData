@@ -24,6 +24,6 @@ namespace KalaData::Compression
 
 		KalaDataCore::PrintMessage(
 			"Starting to decompress archive '" + archivePath + "' to folder '" + target + "'!\n",
-			MessageType::MESSAGETYPE_SUCCESS);
+			MessageType::MESSAGETYPE_DEBUG);
 	}
 }
