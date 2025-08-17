@@ -27,12 +27,15 @@ namespace KalaData::Core
 	class KalaDataCore
 	{
 	public:
+		//Runtime loop of KalaData
 		static void Update();
 
+		//Print a message to the console with your preferred type
 		static void PrintMessage(
 			const string& message,
 			MessageType type = MessageType::MESSAGETYPE_LOG);
 
+		//Shut down KalaData, optional critical shutdown uses quick_exit
 		static void Shutdown(ShutdownState state = ShutdownState::SHUTDOWN_REGULAR);
 	};
 }

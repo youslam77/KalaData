@@ -14,6 +14,32 @@ namespace KalaData::Core
 	class Command
 	{
 	public:
+		//Controls how a command is handled
 		static void HandleCommand(vector<string> parameters);
+
+		//Print version to console
+		static void Command_Version();
+
+		//Print KalaData info to console
+		static void Command_Info();
+
+		//List all commands in console
+		static void Command_Help();
+
+		//Print info about selected command in console
+		static void Command_Help_Command(const string& commandName);
+
+		//Compression pre-checks
+		static void Command_Compress(
+			const string& origin,
+			const string& target);
+
+		//Decompression pre-checks
+		static void Command_Decompress(
+			const string& origin,
+			const string& target);
+
+		//Shuts down KalaData
+		static void Command_Exit();
 	};
 }
