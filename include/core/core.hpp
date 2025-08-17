@@ -15,12 +15,27 @@ namespace KalaData::Core
 		SHUTDOWN_CRITICAL
 	};
 
+	enum class MessageType
+	{
+		MESSAGETYPE_LOG,
+		MESSAGETYPE_DEBUG,
+		MESSAGETYPE_WARNING,
+		MESSAGETYPE_ERROR,
+		MESSAGETYPE_SUCCESS
+	};
+
 	class KalaDataCore
 	{
 	public:
-		static void Start();
+		static void Start(
+			const string& origin,
+			const string& target);
 
 		static void Update();
+
+		static void PrintMessage(
+			const string& message,
+			MessageType type = MessageType::MESSAGETYPE_LOG);
 
 		static void Shutdown(ShutdownState state = ShutdownState::SHUTDOWN_REGULAR);
 	};
