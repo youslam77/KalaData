@@ -35,6 +35,9 @@ namespace KalaData::Core
 			const string& message,
 			MessageType type = MessageType::MESSAGETYPE_LOG);
 
+		//Shut down and close because this is a bad scenario and should never happen
+		static void ForceClose(const string& title, const string& message);
+
 		//Shut down KalaData, optional critical shutdown uses quick_exit
 		static void Shutdown(ShutdownState state = ShutdownState::SHUTDOWN_REGULAR);
 	};

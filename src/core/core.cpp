@@ -3,6 +3,12 @@
 //This is free software, and you are welcome to redistribute it under certain conditions.
 //Read LICENSE.md for more information.
 
+#ifdef _WIN32
+#include <windows.h>
+#include <mmsystem.h>
+#elif __linux__
+//TODO: ADD LINUX EQUIVALENT
+#endif
 #include <iostream>
 #include <sstream>
 #include <iterator>
@@ -69,6 +75,30 @@ namespace KalaData::Core
 			clog << "[DEBUG] " << message << "\n";
 			break;
 #endif
+		}
+	}
+
+	void KalaDataCore::ForceClose(const string& title, const string& message)
+	{
+		PrintMessage(
+			message,
+			MessageType::MESSAGETYPE_ERROR);
+
+#ifdef _WIN32
+		int flags =
+			MB_OK
+			| MB_ICONERROR;
+#elif __linux__
+		//TODO: ADD LINUX EQUIVALENT
+#endif
+
+		if (MessageBox(
+			nullptr,
+			message.c_str(),
+			title.c_str(),
+			flags) == 1)
+		{
+			Shutdown(ShutdownState::SHUTDOWN_CRITICAL);
 		}
 	}
 
