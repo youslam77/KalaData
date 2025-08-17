@@ -182,15 +182,24 @@ namespace KalaData::Compression
 				return;
 			}
 
-			//write compressed data
-			out.write((char*)finalData.data(), finalData.size());
-			if (!out.good())
+			//write compressed data if it is more than 0 bytes
+			if (finalSize > 0)
 			{
-				ForceClose(
-					"Final data write failure while building archive '" + target + "'!\n",
-					true);
+				out.write((char*)finalData.data(), finalData.size());
+				if (!out.good())
+				{
+					ForceClose(
+						"Final data write failure while building archive '" + target + "'!\n",
+						true);
 
-				return;
+					return;
+				}
+			}
+			else
+			{
+				KalaDataCore::PrintMessage(
+					"File '" + relPath + "' is empty, storing as 0-byte entry in archive.\n",
+					MessageType::MESSAGETYPE_WARNING);
 			}
 		}
 
@@ -362,14 +371,7 @@ vector<uint8_t> CompressBuffer(
 {
 	vector<uint8_t> output{};
 
-	if (input.empty())
-	{
-		ForceClose(
-			"Attempted to compress empty input buffer for file '" + origin + "'!\n",
-			true);
-
-		return output;
-	}
+	if (input.empty()) return output;
 
 	size_t pos = 0;
 
