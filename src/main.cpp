@@ -38,15 +38,24 @@ constexpr uint64_t maxFolderSize = 5ull * 1024 * 1024 * 1024;
 
 int main(int argc, char* argv[])
 {
-	if (argc < 3)
+	if (argc == 1)
 	{
 		stringstream ss{};
-		ss << "Cannot have less than 3 parameters! "
-			<< "First parameter must always be 'KalaData.exe', "
-			<< "second parameter must be origin folder "
-			<< "and third parameter must be target folder!";
+		ss << "Looks like you tried to run this program without any parameters!\n"
+			<< "This program is not intended to be ran manually, you must pass parameters.\n"
+			<< "Type 'help' to see all supported commands.\n";
 
 		IncorrectUsageError(ss.str());
+		return 1;
+	}
+
+	if (argc > 3)
+	{
+		stringstream ss{};
+		ss << "Unsupported parameter count detected!\n"
+			<< "Type 'help' to see all supported commands.\n";
+
+		IncorrectUsageError("Unsupported target");
 		return 1;
 	}
 
@@ -97,8 +106,8 @@ int main(int argc, char* argv[])
 	if (exists(path(target) / convertedName))
 	{
 		stringstream ss{};
-		ss << "Cannot pack target '" + convertedName + "' because a file"
-			<< " with the same name already exists in the target folder '" + target + "'";
+		ss << "Cannot pack target '" + convertedName + "' because a file "
+			<< "with the same name already exists in the target folder '" + target + "'";
 
 		IncorrectUsageError(ss.str());
 		return 1;
@@ -109,7 +118,7 @@ int main(int argc, char* argv[])
 
 void IncorrectUsageError(const string& message)
 {
-	KalaDataCore::PrintMessage(message);
+	KalaDataCore::PrintMessage(message, MessageType::MESSAGETYPE_ERROR);
 	KalaDataCore::Shutdown(ShutdownState::SHUTDOWN_CRITICAL);
 }
 

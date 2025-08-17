@@ -10,6 +10,7 @@
 using std::cout;
 using std::clog;
 using std::cerr;
+using std::cin;
 
 static bool isRunning = false;
 
@@ -47,21 +48,29 @@ namespace KalaData::Core
 		{
 		case MessageType::MESSAGETYPE_LOG:
 			cout << message << "\n";
+			break;
 		case MessageType::MESSAGETYPE_WARNING:
 			clog << "[WARNING] " << message << "\n";
+			break;
 		case MessageType::MESSAGETYPE_ERROR:
 			cerr << "[ERROR] " << message << "\n";
+			break;
 		case MessageType::MESSAGETYPE_SUCCESS:
 			cout << "[SUCCESS] " << message << "\n";
+			break;
 #ifdef _DEBUG
 		case MessageType::MESSAGETYPE_DEBUG:
 			clog << "[DEBUG] " << message << "\n";
+			break;
 #endif
 		}
 	}
 
 	void KalaDataCore::Shutdown(ShutdownState state)
 	{
+		PrintMessage("Press Enter to exit...");
+		cin.get();
+
 		if (state == ShutdownState::SHUTDOWN_CRITICAL)
 		{
 			PrintMessage(
