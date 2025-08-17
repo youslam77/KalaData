@@ -3,18 +3,17 @@
 //This is free software, and you are welcome to redistribute it under certain conditions.
 //Read LICENSE.md for more information.
 
-#include <string>
 #include <vector>
+#include <string>
 
-#include "core/command.hpp"
-
-using KalaData::Core::Command;
-
-using std::string;
-using std::vector;
-
-int main(int argc, char* argv[])
+namespace KalaData::Core
 {
-	vector<string> args(argv, argv + argc);
-	Command::HandleCommand(args);
+	using std::vector;
+	using std::string;
+
+	class Command
+	{
+	public:
+		static void HandleCommand(vector<string> parameters);
+	};
 }
