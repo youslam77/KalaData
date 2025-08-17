@@ -4,40 +4,44 @@
 //Read LICENSE.md for more information.
 
 #include <iostream>
+#include <sstream>
+#include <iterator>
+#include <vector>
 
 #include "core/core.hpp"
+#include "core/command.hpp"
 
 using std::cout;
 using std::clog;
 using std::cerr;
 using std::cin;
+using std::istringstream;
+using std::istream_iterator;
+using std::vector;
 
 static bool isRunning = false;
 
 namespace KalaData::Core
 {
-	void KalaDataCore::Start(
-		const string& origin,
-		const string& target)
-	{
-		PrintMessage("Initializing KalaData...");
-
-		isRunning = true;
-		KalaDataCore::Update();
-	}
-
 	void KalaDataCore::Update()
 	{
-		PrintMessage(
-			"Entered render loop...",
-			MessageType::MESSAGETYPE_DEBUG);
+		isRunning = true;
 
 		while (isRunning)
 		{
+			string input;
+			getline(cin, input);
 
+			istringstream iss(input);
+			vector<string> tokens
+			{
+				istream_iterator<string>{iss},
+				istream_iterator<string>{}
+			};
+			tokens.insert(tokens.begin(), "KalaData.exe");
+
+			Command::HandleCommand(tokens);
 		}
-
-		Shutdown();
 	}
 
 	void KalaDataCore::PrintMessage(
@@ -68,9 +72,6 @@ namespace KalaData::Core
 
 	void KalaDataCore::Shutdown(ShutdownState state)
 	{
-		PrintMessage("Press Enter to exit...");
-		cin.get();
-
 		if (state == ShutdownState::SHUTDOWN_CRITICAL)
 		{
 			PrintMessage(
@@ -82,7 +83,7 @@ namespace KalaData::Core
 		}
 
 		PrintMessage(
-			"Regular KalaData shutdown...",
+			"KalaData has shut down normally.",
 			MessageType::MESSAGETYPE_DEBUG);
 
 		exit(0);

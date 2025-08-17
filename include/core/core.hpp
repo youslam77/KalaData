@@ -27,10 +27,6 @@ namespace KalaData::Core
 	class KalaDataCore
 	{
 	public:
-		static void Start(
-			const string& origin,
-			const string& target);
-
 		static void Update();
 
 		static void PrintMessage(

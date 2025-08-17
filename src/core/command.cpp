@@ -29,6 +29,28 @@ using std::filesystem::recursive_directory_iterator;
 using std::fixed;
 using std::setprecision;
 
+//
+// COMMANDS
+//
+
+static void Command_Info();
+
+static void Command_Help();
+
+static void Command_Help_Command(const string& commandName);
+
+static void Command_Compress(
+	const string& origin,
+	const string& target);
+
+static void Command_Decompress(
+	const string& origin,
+	const string& target);
+
+//
+// UTILS
+//
+
 static void IncorrectUsageError(const string& message);
 
 static uint64_t GetFolderSize(const string& folderPath);
@@ -42,89 +64,277 @@ namespace KalaData::Core
 {
 	void Command::HandleCommand(vector<string> parameters)
 	{
-		if (parameters.size() == 1)
+		if (parameters.size() == 2
+			&& (parameters[1] == "--v"
+			|| parameters[1] == "--version"))
 		{
+			KalaDataCore::PrintMessage("KalaData version: 0.0.1 Alpha\n");
+		}
+
+		else if (parameters.size() == 2
+			&& parameters[1] == "--info")
+		{
+			Command_Info();
+			return;
+		}
+
+		else if (parameters.size() == 2
+			&& parameters[1] == "--help")
+		{
+			Command_Help();
+			return;
+		}
+
+		else if (parameters.size() == 3
+			&& parameters[1] == "--help")
+		{
+			Command_Help_Command(parameters[2]);
+			return;
+		}
+
+		else if (parameters.size() == 2
+			&& parameters[1] == "--clear")
+		{
+			KalaDataCore::PrintMessage("\033[2J\033[H");
+			return;
+		}
+
+		else if (parameters.size() == 4
+			&& (parameters[1] == "--c"
+			|| parameters[1] == "--compress"))
+		{
+			Command_Compress(parameters[2], parameters[3]);
+		}
+
+		else if (parameters.size() == 4
+			&& (parameters[1] == "--dc"
+			|| parameters[1] == "--decompress"))
+		{
+			Command_Decompress(parameters[2], parameters[3]);
+		}
+
+		else if (parameters.size() == 2
+			&& parameters[1] == "--exit")
+		{
+			KalaDataCore::Shutdown();
+		}
+
+		else
+		{
+			string command{};
+
+			for (const auto& par : parameters)
+			{
+				if (par == parameters[0])
+				{
+					command = command + par;
+				}
+				else  command = command + " " + par;
+			}
+
+			string target = "KalaData.exe ";
+			size_t pos = command.find(target);
+			if (pos != string::npos)
+			{
+				command.erase(pos, target.length());
+			}
+
 			stringstream ss{};
-			ss << "Looks like you tried to run this program without any parameters!\n"
-				<< "This program is not intended to be ran manually, you must pass parameters.\n"
-				<< "Type 'help' to see all supported commands.\n";
+			ss << "Unsupported command structure '" + command + "'! Type --help to list all commands.\n";
 
 			IncorrectUsageError(ss.str());
 			return;
 		}
-
-		if (parameters.size() > 3)
-		{
-			stringstream ss{};
-			ss << "Unsupported parameter count detected!\n"
-				<< "Type 'help' to see all supported commands.\n";
-
-			IncorrectUsageError("Unsupported target");
-			return;
-		}
-
-		string origin = parameters[1];
-		string target = parameters[2];
-
-		if (!exists(origin))
-		{
-			IncorrectUsageError("Origin '" + origin + "' does not exist!");
-			return;
-		}
-
-		if (!is_directory(origin))
-		{
-			IncorrectUsageError("Origin '" + origin + "' must be a directory!");
-			return;
-		}
-
-		if (is_empty(origin))
-		{
-			IncorrectUsageError("Origin '" + origin + "' must not be an empty folder!");
-			return;
-		}
-
-		uint64_t originSize = GetFolderSize(origin);
-		if (originSize > maxFolderSize)
-		{
-			string convertedOriginSize = ConvertSizeToString(originSize);
-
-			IncorrectUsageError("Origin '" + origin + "' size '" + convertedOriginSize + "' exceeds max allowed size '5.00GB'!");
-			return;
-		}
-
-		if (!exists(target))
-		{
-			IncorrectUsageError("Target folder '" + target + "' does not exist!");
-			return;
-		}
-
-		if (!is_directory(target))
-		{
-			IncorrectUsageError("Target '" + target + "' must be a directory!");
-			return;
-		}
-
-		string convertedName = path(origin).stem().string() + ".kdat";
-
-		if (exists(path(target) / convertedName))
-		{
-			stringstream ss{};
-			ss << "Cannot pack target '" + convertedName + "' because a file "
-				<< "with the same name already exists in the target folder '" + target + "'";
-
-			IncorrectUsageError(ss.str());
-			return;
-		}
-
-		KalaDataCore::Start(origin, target);
 	}
 }
 
+//
+// COMMANDS
+//
+
+void Command_Info()
+{
+	stringstream ss{};
+	ss << "KalaData is a lightweight C++ 20 data compressor and decompressor for the '.kdat' format. "
+		<< "KDat is aimed for games but can be used for regular software too.\n";
+
+	KalaDataCore::PrintMessage(ss.str());
+}
+
+void Command_Help()
+{
+	stringstream ss{};
+	ss << "====================\n\n"
+
+		<< "Notes:\n"
+		<< "  - each command starts with the program name 'KalaData.exe' as its first parameter\n"
+		<< "  - all paths are absolute and KalaData does not take relative paths.\n\n"
+
+		<< "Commands:\n"
+		<< "  --version                  - prints the KalaData version\n"
+		<< "  --v                        - same as above\n"
+		<< "  --info                     - prints general info about KalaData\n"
+		<< "  --help                     - lists all commands\n"
+		<< "  --help x                   - prints additional info about selected command 'x'\n"
+		<< "  --clear                    - cleans the console of all messages\n"
+		<< "  --compress origin target   - compresses folder 'origin' into a '.kdat' archive inside folder 'target'\n"
+		<< "  --c origin target          - same as above\n"
+		<< "  --decompress origin target - decompresses file 'origin' inside folder 'target'\n"
+		<< "  --dc origin target         - same as above\n"
+		<< "  --exit                     - shuts down KalaData\n\n"
+
+		<< "====================\n";
+
+	KalaDataCore::PrintMessage(ss.str());
+}
+
+void Command_Help_Command(const string& commandName)
+{
+	if (commandName == "version"
+		|| commandName == "--version"
+		|| commandName == "v"
+		|| commandName == "--v")
+	{
+		KalaDataCore::PrintMessage("Prints the KalaData version\n");
+	}
+
+	else if (commandName == "info"
+		|| commandName == "--info")
+	{
+		KalaDataCore::PrintMessage("Prints general info about KalaData\n");
+	}
+
+	else if (commandName == "help"
+		|| commandName == "--help")
+	{
+		KalaDataCore::PrintMessage("Lists all commands\n");
+	}
+
+	else if (commandName == "clear"
+		|| commandName == "--clear")
+	{
+		KalaDataCore::PrintMessage("Cleans the console of all messages\n");
+	}
+
+	else if (commandName == "compress"
+		|| commandName == "--compress"
+		|| commandName == "c"
+		|| commandName == "--c")
+	{
+		stringstream ss{};
+
+		ss << "Takes in a folder which will be compressed into a '.kdat' file inside the target folder.\n\n"
+			<< "Requirements and restrictions:\n"
+			<< "  - Origin must be a folder\n"
+			<< "  - Origin folder path must exist\n"
+			<< "  - Origin folder must not be empty\n"
+			<< "  - Origin folder size must not exceed 5GB\n"
+			<< "  - Target folder must exist\n"
+			<< "  - Target folder root must not contain file with the same name as Origin folder\n";
+
+		KalaDataCore::PrintMessage(ss.str());
+	}
+
+	else if (commandName == "decompress"
+		|| commandName == "--decompress"
+		|| commandName == "dc"
+		|| commandName == "--dc")
+	{
+		KalaDataCore::PrintMessage(
+			"--decompress command is placeholder and has no effect\n",
+			MessageType::MESSAGETYPE_WARNING);
+	}
+
+	else if (commandName == "exit"
+		|| commandName == "--exit")
+	{
+		KalaDataCore::PrintMessage("Shuts down KalaData\n");
+	}
+	
+	else
+	{
+		IncorrectUsageError("Cannot get info about command '" + commandName + "' because it does not exist! Type '--help' to list all commands\n");
+	}
+}
+
+void Command_Compress(
+	const string& origin,
+	const string& target)
+{
+	if (!exists(origin))
+	{
+		IncorrectUsageError("Origin '" + origin + "' does not exist!");
+		return;
+	}
+
+	if (!is_directory(origin))
+	{
+		IncorrectUsageError("Origin '" + origin + "' must be a directory!");
+		return;
+	}
+
+	if (is_empty(origin))
+	{
+		IncorrectUsageError("Origin '" + origin + "' must not be an empty folder!");
+		return;
+	}
+
+	uint64_t originSize = GetFolderSize(origin);
+	if (originSize > maxFolderSize)
+	{
+		string convertedOriginSize = ConvertSizeToString(originSize);
+
+		IncorrectUsageError("Origin '" + origin + "' size '" + convertedOriginSize + "' exceeds max allowed size '5.00GB'!");
+		return;
+	}
+
+	if (!exists(target))
+	{
+		IncorrectUsageError("Target folder '" + target + "' does not exist!");
+		return;
+	}
+
+	if (!is_directory(target))
+	{
+		IncorrectUsageError("Target '" + target + "' must be a directory!");
+		return;
+	}
+
+	string convertedName = path(origin).stem().string() + ".kdat";
+
+	if (exists(path(target) / convertedName))
+	{
+		stringstream ss{};
+		ss << "Cannot pack target '" + convertedName + "' because a file "
+			<< "with the same name already exists in the target folder '" + target + "'";
+
+		IncorrectUsageError(ss.str());
+		return;
+	}
+
+	KalaDataCore::PrintMessage(
+		"Ready to compress to '" + convertedName + "'!",
+		MessageType::MESSAGETYPE_SUCCESS);
+}
+
+void Command_Decompress(
+	const string& origin,
+	const string& target)
+{
+	KalaDataCore::PrintMessage(
+		"--decompress command is placeholder and has no effect!",
+		MessageType::MESSAGETYPE_WARNING);
+}
+
+//
+// UTILS
+//
+
 void IncorrectUsageError(const string& message)
 {
-	KalaDataCore::PrintMessage(message, MessageType::MESSAGETYPE_ERROR);
-	KalaDataCore::Shutdown(ShutdownState::SHUTDOWN_CRITICAL);
+	KalaDataCore::PrintMessage(
+		message,
+		MessageType::MESSAGETYPE_ERROR);
 }
 
 uint64_t GetFolderSize(const string& folderPath)

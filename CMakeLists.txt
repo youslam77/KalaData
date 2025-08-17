@@ -70,14 +70,6 @@ if (UNIX)
     target_link_libraries(KalaData PRIVATE ${X11_LIBRARIES})
 endif()
 
-# Windows Subsystem for Release builds
-if(IS_RELEASE AND WIN32)
-    set_target_properties(KalaData PROPERTIES WIN32_EXECUTABLE TRUE)
-    if (MSVC)
-        set_target_properties(KalaData PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup")
-    endif()
-endif()
-
 # Set Windows Details tab data
 if (WIN32)
 	if (IS_RELEASE)
