@@ -130,7 +130,8 @@ namespace KalaData::Compression
 			const vector<uint8_t>& finalData = useCompressed ? compData : raw;
 			uint64_t finalSize = useCompressed ? compressedSize : originalSize;
 
-			if (!useCompressed)
+			if (!useCompressed
+				&& originalSize > 0)
 			{
 				stringstream ss{};
 				ss << "Skipping storing compressed data for relative path '" + relPath + "' and storing as raw "
