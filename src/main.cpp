@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
 	if (argc == 1)
 	{
 		string input;
-		cout << "KalaData 0.0.1 Alpha\n";
+		cout << "KalaData 0.1 Alpha\n";
 		cout << "Type '--help' to list all commands\n";
 
 		cout << "KalaData> ";

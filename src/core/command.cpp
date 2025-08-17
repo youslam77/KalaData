@@ -131,7 +131,7 @@ namespace KalaData::Core
 
 	void Command::Command_Version()
 	{
-		KalaDataCore::PrintMessage("KalaData version: 0.0.1 Alpha\n");
+		KalaDataCore::PrintMessage("KalaData version: 0.1 Alpha\n");
 	}
 
 	void Command::Command_Info()
