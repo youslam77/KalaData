@@ -123,12 +123,28 @@ namespace KalaData::Compression
 			uint64_t originalSize = raw.size();
 			uint64_t compressedSize = compData.size();
 
+			//safeguard: if compression is bigger or equal than original then store raw instead
+			bool useCompressed = compressedSize < originalSize;
+			const vector<uint8_t>& finalData = useCompressed ? compData : raw;
+			uint64_t finalSize = useCompressed ? compressedSize : originalSize;
+
+			if (!useCompressed)
+			{
+				stringstream ss{};
+				ss << "Skipping storing compressed data for relative path '" + relPath + "' and storing as raw "
+					<< "because compressed size '" + to_string(compressedSize) + "' is not smaller than original size '" + to_string(originalSize) + "'!\n";
+
+				KalaDataCore::PrintMessage(
+					ss.str(),
+					MessageType::MESSAGETYPE_WARNING);
+			}
+
 			//write metadata
 			out.write((char*)&pathLen, sizeof(uint32_t));
 			if (!out.good())
 			{
 				ForceClose(
-					"Write failure while building archive '" + target + "'!\n",
+					"Path length write failure while building archive '" + target + "'!\n",
 					true);
 
 				return;
@@ -138,7 +154,7 @@ namespace KalaData::Compression
 			if (!out.good())
 			{
 				ForceClose(
-					"Write failure while building archive '" + target + "'!\n",
+					"Relative path write failure while building archive '" + target + "'!\n",
 					true);
 
 				return;
@@ -148,33 +164,37 @@ namespace KalaData::Compression
 			if (!out.good())
 			{
 				ForceClose(
-					"Write failure while building archive '" + target + "'!\n",
+					"Original size write failure while building archive '" + target + "'!\n",
 					true);
 
 				return;
 			}
 
-			out.write((char*)&compressedSize, sizeof(uint64_t));
+			out.write((char*)&finalSize, sizeof(uint64_t));
 			if (!out.good())
 			{
 				ForceClose(
-					"Write failure while building archive '" + target + "'!\n",
+					"Final size write failure while building archive '" + target + "'!\n",
 					true);
 
 				return;
 			}
 
 			//write compressed data
-			out.write((char*)compData.data(), compData.size());
+			out.write((char*)finalData.data(), finalData.size());
 			if (!out.good())
 			{
 				ForceClose(
-					"Write failure while building archive '" + target + "'!\n",
+					"Final data write failure while building archive '" + target + "'!\n",
 					true);
 
 				return;
 			}
 		}
+
+		KalaDataCore::PrintMessage(
+			"Finished compressing folder '" + origin + "' to archive '" + target + "'!\n",
+			MessageType::MESSAGETYPE_SUCCESS);
 	}
 
 	void Compress::DecompressToFolder(
@@ -316,6 +336,10 @@ namespace KalaData::Compression
 			in.seekg(compressedStart);
 			in.seekg((streamoff)compressedSize, ios::cur);
 		}
+
+		KalaDataCore::PrintMessage(
+			"Finished decompressing archive '" + origin + "' to folder '" + target + "'!\n",
+			MessageType::MESSAGETYPE_SUCCESS);
 	}
 }
 

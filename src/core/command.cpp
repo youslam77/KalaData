@@ -221,7 +221,7 @@ namespace KalaData::Core
 				<< "  - Origin must exist\n"
 				<< "  - Origin must be a regular file\n"
 				<< "  -	Origin must have the '.kdat' extension\n"
-				<< "  - Target path must not exist\n"
+				<< "  - Target path must exist\n"
 				<< "  - Target path must be a folder"
 				<< "  - Target folder must be writable\n";
 
@@ -347,16 +347,16 @@ namespace KalaData::Core
 			return;
 		}
 
-		if (exists(target))
+		if (!exists(target))
 		{
 			KalaDataCore::PrintMessage(
-				"Target folder '" + target + "' already exists!\n",
+				"Target folder '" + target + "' does not exist!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
 			return;
 		}
 
-		if (path(target).has_extension())
+		if (!is_directory(target))
 		{
 			KalaDataCore::PrintMessage(
 				"Target '" + target + "' must be a folder!\n",
