@@ -49,7 +49,9 @@ static void ForceClose(
 	bool type);
 
 //Compress a single buffer into an already open stream
-static vector<uint8_t> CompressBuffer(const vector<uint8_t>& input);
+static vector<uint8_t> CompressBuffer(
+	const vector<uint8_t>& input,
+	const string& origin);
 
 //Decompress from an already open stream into a buffer
 static void DecompressBuffer(
@@ -118,7 +120,7 @@ namespace KalaData::Compression
 			in.close();
 
 			//compress directly into memory
-			vector<uint8_t> compData = CompressBuffer(raw);
+			vector<uint8_t> compData = CompressBuffer(raw, relPath);
 
 			uint64_t originalSize = raw.size();
 			uint64_t compressedSize = compData.size();
@@ -354,14 +356,16 @@ void ForceClose(
 	KalaDataCore::ForceClose(title, message);
 }
 
-vector<uint8_t> CompressBuffer(const vector<uint8_t>& input)
+vector<uint8_t> CompressBuffer(
+	const vector<uint8_t>& input,
+	const string& origin)
 {
 	vector<uint8_t> output{};
 
 	if (input.empty())
 	{
 		ForceClose(
-			"Attempted to compress empty input buffer!\n",
+			"Attempted to compress empty input buffer for file '" + origin + "'!\n",
 			true);
 
 		return output;
@@ -400,7 +404,7 @@ vector<uint8_t> CompressBuffer(const vector<uint8_t>& input)
 			if (bestOffset >= UINT16_MAX)
 			{
 				ForceClose(
-					"Offset too large during compressing (data window exceeded)!\n",
+					"Offset too large for file '" + origin + "' during compressing (data window exceeded)!\n",
 					true);
 
 				return {};
@@ -417,7 +421,7 @@ vector<uint8_t> CompressBuffer(const vector<uint8_t>& input)
 			if (bestLength > UINT8_MAX)
 			{
 				ForceClose(
-					"Match length too large during compressing (overflow)!\n",
+					"Match length too large for file '" + origin + "' during compressing (overflow)!\n",
 					true);
 
 				return {};
@@ -440,7 +444,7 @@ vector<uint8_t> CompressBuffer(const vector<uint8_t>& input)
 	if (output.empty())
 	{
 		ForceClose(
-			"Compression produced empty output (unexpected)!\n",
+			"Compression produced empty output for file '" + origin + "' (unexpected)!\n",
 			true);
 	}
 
