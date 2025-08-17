@@ -26,4 +26,16 @@ namespace KalaData::Compression
 			"Starting to compress folder '" + origin + "' to archive '" + archiveName + "' in target folder '" + target + "'!\n",
 			MessageType::MESSAGETYPE_DEBUG);
 	}
+
+	void Compress::DecompressToFolder(
+		const string& origin,
+		const string& target)
+	{
+		string archivePath = (path(origin) / path(origin).stem()).string() + ".kdat";
+		string archiveName = path(archivePath).filename().string();
+
+		KalaDataCore::PrintMessage(
+			"Starting to decompress archive '" + archivePath + "' to folder '" + target + "'!\n",
+			MessageType::MESSAGETYPE_DEBUG);
+	}
 }

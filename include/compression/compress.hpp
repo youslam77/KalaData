@@ -17,5 +17,11 @@ namespace KalaData::Compression
 		static void CompressToArchive(
 			const string& origin,
 			const string& target);
+
+		//Decompresses selected .kdat archive straight to selected target folder,
+		//skips all safety checks that are handled in the Command class for the Decompress command
+		static void DecompressToFolder(
+			const string& origin,
+			const string& target);
 	};
 }
