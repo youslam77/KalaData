@@ -7,6 +7,7 @@
 #include <string>
 #include <filesystem>
 #include <iomanip>
+#include <fstream>
 
 #include "core/command.hpp"
 #include "core/core.hpp"
@@ -21,6 +22,7 @@ using std::to_string;
 using std::stringstream;
 using std::filesystem::path;
 using std::filesystem::exists;
+using std::filesystem::remove;
 using std::filesystem::is_regular_file;
 using std::filesystem::is_directory;
 using std::filesystem::file_size;
@@ -28,6 +30,8 @@ using std::filesystem::is_empty;
 using std::filesystem::recursive_directory_iterator;
 using std::fixed;
 using std::setprecision;
+using std::ofstream;
+using std::ios;
 
 //
 // COMMANDS
@@ -52,6 +56,8 @@ static void Command_Decompress(
 //
 
 static uint64_t GetFolderSize(const string& folderPath);
+
+static bool CanWriteToFolder(const string& folderPath);
 
 static string ConvertSizeToString(uint64_t size);
 
@@ -91,13 +97,6 @@ namespace KalaData::Core
 			&& parameters[1] == "--help")
 		{
 			Command_Help_Command(parameters[2]);
-			return;
-		}
-
-		else if (parameters.size() == 2
-			&& parameters[1] == "--clear")
-		{
-			KalaDataCore::PrintMessage("\033[2J\033[H");
 			return;
 		}
 
@@ -142,7 +141,7 @@ namespace KalaData::Core
 			}
 
 			stringstream ss{};
-			ss << "Unsupported command structure '" + command + "'! Type --help to list all commands.\n";
+			ss << "Unsupported command '" + command + "'! Type --help to list all commands.\n";
 
 			KalaDataCore::PrintMessage(
 				ss.str(),
@@ -180,7 +179,6 @@ void Command_Help()
 		<< "  --info                     - prints general info about KalaData\n"
 		<< "  --help                     - lists all commands\n"
 		<< "  --help x                   - prints additional info about selected command 'x'\n"
-		<< "  --clear                    - cleans the console of all messages\n"
 		<< "  --compress origin target   - compresses folder 'origin' into a '.kdat' archive inside folder 'target'\n"
 		<< "  --c origin target          - same as above\n"
 		<< "  --decompress origin target - decompresses file 'origin' inside folder 'target'\n"
@@ -212,12 +210,6 @@ void Command_Help_Command(const string& commandName)
 		|| commandName == "--help")
 	{
 		KalaDataCore::PrintMessage("Lists all commands\n");
-	}
-
-	else if (commandName == "clear"
-		|| commandName == "--clear")
-	{
-		KalaDataCore::PrintMessage("Cleans the console of all messages\n");
 	}
 
 	else if (commandName == "compress"
@@ -338,6 +330,15 @@ void Command_Compress(
 		return;
 	}
 
+	if (!CanWriteToFolder(target))
+	{
+		KalaDataCore::PrintMessage(
+			"Insufficient permissions to write to target folder '" + target + "'!\n",
+			MessageType::MESSAGETYPE_ERROR);
+
+		return;
+	}
+
 	KalaDataCore::PrintMessage(
 		"Ready to compress to '" + convertedName + "'!\n",
 		MessageType::MESSAGETYPE_SUCCESS);
@@ -366,6 +367,28 @@ uint64_t GetFolderSize(const string& folderPath)
 	}
 
 	return size;
+}
+
+bool CanWriteToFolder(const string& folderPath)
+{
+	try
+	{
+		path testFile = path(folderPath) / ".kaladata_write_access_test";
+		ofstream writeTest(testFile.string(), ios::out | ios::trunc);
+
+		if (!writeTest.is_open()) return false;
+
+		writeTest << "test";
+		writeTest.close();
+
+		remove(testFile);
+
+		return true;
+	}
+	catch (...)
+	{
+		return false;
+	}
 }
 
 string ConvertSizeToString(uint64_t size)

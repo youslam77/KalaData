@@ -24,16 +24,6 @@ namespace KalaData::Core
 		MESSAGETYPE_SUCCESS
 	};
 
-	class Color
-	{
-	public:
-		static inline const char* reset = "\033[0m";
-		static inline const char* red = "\033[31m";
-		static inline const char* green = "\033[32m";
-		static inline const char* yellow = "\033[33m";
-		static inline const char* blue = "\033[34m";
-	};
-
 	class KalaDataCore
 	{
 	public:

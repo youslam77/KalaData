@@ -53,20 +53,20 @@ namespace KalaData::Core
 		switch (type)
 		{
 		case MessageType::MESSAGETYPE_LOG:
-			cout << Color::reset << message << "\n";
+			cout << message << "\n";
 			break;
 		case MessageType::MESSAGETYPE_WARNING:
-			clog << Color::yellow << "[WARNING] " << message << Color::reset << "\n";
+			clog << "[WARNING] " << message << "\n";
 			break;
 		case MessageType::MESSAGETYPE_ERROR:
-			cerr << Color::red << "[ERROR] " << message << Color::reset << "\n";
+			cerr << "[ERROR] " << message << "\n";
 			break;
 		case MessageType::MESSAGETYPE_SUCCESS:
-			cout << Color::green << "[SUCCESS] " << message << Color::reset << "\n";
+			cout << "[SUCCESS] " << message << "\n";
 			break;
 #ifdef _DEBUG
 		case MessageType::MESSAGETYPE_DEBUG:
-			clog << Color::blue << "[DEBUG] " << message << Color::reset << "\n";
+			clog << "[DEBUG] " << message << "\n";
 			break;
 #endif
 		}
