@@ -29,6 +29,8 @@ namespace KalaData::Core
 
 		while (isRunning)
 		{
+			cout << "KalaData> ";
+
 			string input;
 			getline(cin, input);
 
@@ -51,20 +53,20 @@ namespace KalaData::Core
 		switch (type)
 		{
 		case MessageType::MESSAGETYPE_LOG:
-			cout << message << "\n";
+			cout << Color::reset << message << "\n";
 			break;
 		case MessageType::MESSAGETYPE_WARNING:
-			clog << "[WARNING] " << message << "\n";
+			clog << Color::yellow << "[WARNING] " << message << Color::reset << "\n";
 			break;
 		case MessageType::MESSAGETYPE_ERROR:
-			cerr << "[ERROR] " << message << "\n";
+			cerr << Color::red << "[ERROR] " << message << Color::reset << "\n";
 			break;
 		case MessageType::MESSAGETYPE_SUCCESS:
-			cout << "[SUCCESS] " << message << "\n";
+			cout << Color::green << "[SUCCESS] " << message << Color::reset << "\n";
 			break;
 #ifdef _DEBUG
 		case MessageType::MESSAGETYPE_DEBUG:
-			clog << "[DEBUG] " << message << "\n";
+			clog << Color::blue << "[DEBUG] " << message << Color::reset << "\n";
 			break;
 #endif
 		}
@@ -75,7 +77,7 @@ namespace KalaData::Core
 		if (state == ShutdownState::SHUTDOWN_CRITICAL)
 		{
 			PrintMessage(
-				"Critical KalaData shutdown!",
+				"Critical KalaData shutdown!\n",
 				MessageType::MESSAGETYPE_WARNING);
 
 			quick_exit(EXIT_FAILURE);
@@ -83,7 +85,7 @@ namespace KalaData::Core
 		}
 
 		PrintMessage(
-			"KalaData has shut down normally.",
+			"KalaData has shut down normally.\n",
 			MessageType::MESSAGETYPE_DEBUG);
 
 		exit(0);

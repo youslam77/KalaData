@@ -28,7 +28,10 @@ int main(int argc, char* argv[])
 	if (argc == 1)
 	{
 		string input;
+		cout << "KalaData 0.0.1 Alpha\n";
 		cout << "Type '--help' to list all commands\n";
+
+		cout << "KalaData> ";
 		getline(cin, input);
 
 		istringstream iss(input);
@@ -40,6 +43,11 @@ int main(int argc, char* argv[])
 		tokens.insert(tokens.begin(), "KalaData.exe");
 
 		Command::HandleCommand(tokens);
+	}
+	else
+	{
+		vector<string> commands(argv, argv + argc);
+		Command::HandleCommand(commands);
 	}
 
 	KalaDataCore::Update();

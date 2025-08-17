@@ -51,8 +51,6 @@ static void Command_Decompress(
 // UTILS
 //
 
-static void IncorrectUsageError(const string& message);
-
 static uint64_t GetFolderSize(const string& folderPath);
 
 static string ConvertSizeToString(uint64_t size);
@@ -64,6 +62,10 @@ namespace KalaData::Core
 {
 	void Command::HandleCommand(vector<string> parameters)
 	{
+		//remove 'KalaData> ' at the front of the parameters
+		vector<string> cleanedParameters = parameters;
+		cleanedParameters.erase(cleanedParameters.begin());
+
 		if (parameters.size() == 2
 			&& (parameters[1] == "--v"
 			|| parameters[1] == "--version"))
@@ -142,7 +144,9 @@ namespace KalaData::Core
 			stringstream ss{};
 			ss << "Unsupported command structure '" + command + "'! Type --help to list all commands.\n";
 
-			IncorrectUsageError(ss.str());
+			KalaDataCore::PrintMessage(
+				ss.str(),
+				MessageType::MESSAGETYPE_ERROR);
 			return;
 		}
 	}
@@ -253,7 +257,9 @@ void Command_Help_Command(const string& commandName)
 	
 	else
 	{
-		IncorrectUsageError("Cannot get info about command '" + commandName + "' because it does not exist! Type '--help' to list all commands\n");
+		KalaDataCore::PrintMessage(
+			"Cannot get info about command '" + commandName + "' because it does not exist! Type '--help' to list all commands\n",
+			MessageType::MESSAGETYPE_ERROR);
 	}
 }
 
@@ -263,19 +269,28 @@ void Command_Compress(
 {
 	if (!exists(origin))
 	{
-		IncorrectUsageError("Origin '" + origin + "' does not exist!");
+		KalaDataCore::PrintMessage(
+			"Origin '" + origin + "' does not exist!\n",
+			MessageType::MESSAGETYPE_ERROR);
+
 		return;
 	}
 
 	if (!is_directory(origin))
 	{
-		IncorrectUsageError("Origin '" + origin + "' must be a directory!");
+		KalaDataCore::PrintMessage(
+			"Origin '" + origin + "' must be a directory!\n",
+			MessageType::MESSAGETYPE_ERROR);
+
 		return;
 	}
 
 	if (is_empty(origin))
 	{
-		IncorrectUsageError("Origin '" + origin + "' must not be an empty folder!");
+		KalaDataCore::PrintMessage(
+			"Origin '" + origin + "' must not be an empty folder!\n",
+			MessageType::MESSAGETYPE_ERROR);
+
 		return;
 	}
 
@@ -284,19 +299,28 @@ void Command_Compress(
 	{
 		string convertedOriginSize = ConvertSizeToString(originSize);
 
-		IncorrectUsageError("Origin '" + origin + "' size '" + convertedOriginSize + "' exceeds max allowed size '5.00GB'!");
+		KalaDataCore::PrintMessage(
+			"Origin '" + origin + "' size '" + convertedOriginSize + "' exceeds max allowed size '5.00GB'!\n",
+			MessageType::MESSAGETYPE_ERROR);
+
 		return;
 	}
 
 	if (!exists(target))
 	{
-		IncorrectUsageError("Target folder '" + target + "' does not exist!");
+		KalaDataCore::PrintMessage(
+			"Target folder '" + target + "' does not exist!\n",
+			MessageType::MESSAGETYPE_ERROR);
+
 		return;
 	}
 
 	if (!is_directory(target))
 	{
-		IncorrectUsageError("Target '" + target + "' must be a directory!");
+		KalaDataCore::PrintMessage(
+			"Target '" + target + "' must be a directory!\n",
+			MessageType::MESSAGETYPE_ERROR);
+
 		return;
 	}
 
@@ -306,14 +330,16 @@ void Command_Compress(
 	{
 		stringstream ss{};
 		ss << "Cannot pack target '" + convertedName + "' because a file "
-			<< "with the same name already exists in the target folder '" + target + "'";
+			<< "with the same name already exists in the target folder '" + target + "'\n";
 
-		IncorrectUsageError(ss.str());
+		KalaDataCore::PrintMessage(
+			ss.str(),
+			MessageType::MESSAGETYPE_ERROR);
 		return;
 	}
 
 	KalaDataCore::PrintMessage(
-		"Ready to compress to '" + convertedName + "'!",
+		"Ready to compress to '" + convertedName + "'!\n",
 		MessageType::MESSAGETYPE_SUCCESS);
 }
 
@@ -322,20 +348,13 @@ void Command_Decompress(
 	const string& target)
 {
 	KalaDataCore::PrintMessage(
-		"--decompress command is placeholder and has no effect!",
+		"--decompress command is placeholder and has no effect!\n",
 		MessageType::MESSAGETYPE_WARNING);
 }
 
 //
 // UTILS
 //
-
-void IncorrectUsageError(const string& message)
-{
-	KalaDataCore::PrintMessage(
-		message,
-		MessageType::MESSAGETYPE_ERROR);
-}
 
 uint64_t GetFolderSize(const string& folderPath)
 {
