@@ -592,8 +592,7 @@ void DecompressBuffer(
 			}
 			bytesRead += sizeof(uint16_t) + sizeof(uint8_t);
 
-			if (offset == 0
-				|| offset > buffer.size())
+			if (offset > buffer.size())
 			{
 				ForceClose(
 					"Invalid offset in archive '" + target + "' (corruption suspected)!\n",
