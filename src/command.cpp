@@ -99,7 +99,7 @@ namespace KalaData
 		}
 
 		else if (parameters.size() == 3
-			&& parameters[1] == "-sm")
+			&& parameters[1] == "--sm")
 		{
 			Command_SetCompressionMode(parameters[2]);
 		}
@@ -239,27 +239,27 @@ namespace KalaData
 
 				<< "- fastest\n"
 				<< "  - best for temporary files\n"
-				<< "  - window size: " << WINDOW_SIZE_FASTEST << "\n"
+				<< "  - window size: " << WINDOW_SIZE_FASTEST << " bytes\n"
 				<< "  - lookahead: " << LOOKAHEAD_FASTEST << "\n\n"
 				
 				<< "- fast\n"
 				<< "  - best for quick backups\n"
-				<< "  - window size: " << WINDOW_SIZE_FAST<< "\n"
+				<< "  - window size: " << WINDOW_SIZE_FAST<< " bytes\n"
 				<< "  - lookahead: " << LOOKAHEAD_FAST << "\n\n"
 				
 				<< "- balanced\n"
 				<< "  - best for general use\n"
-				<< "  - window size: " << WINDOW_SIZE_BALANCED << "\n"
+				<< "  - window size: " << WINDOW_SIZE_BALANCED << " bytes\n"
 				<< "  - lookahead: " << LOOKAHEAD_BALANCED << "\n\n"
 				
 				<< "- slow\n"
 				<< "  - best for long term storage\n"
-				<< "  - window size: " << WINDOW_SIZE_SLOW << "\n"
+				<< "  - window size: " << WINDOW_SIZE_SLOW << " bytes\n"
 				<< "  - lookahead: " << LOOKAHEAD_SLOW << "\n\n"
 				
 				<< "- archive\n"
 				<< "  - best for maximum compression\n"
-				<< "  - window size: " << WINDOW_SIZE_ARCHIVE << "\n"
+				<< "  - window size: " << WINDOW_SIZE_ARCHIVE << " bytes\n"
 				<< "  - lookahead: " << LOOKAHEAD_ARCHIVE << "\n";
 
 			Core::PrintMessage(ss.str());
