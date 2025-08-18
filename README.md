@@ -99,3 +99,15 @@ Target:
   - folder must be writable
 
 > Example: KalaData.exe --dc C:\Archives\MyApp.kdat C:\Extracted\MyApp
+
+# Prerequisites (when compiling from source code)
+
+## On Windows
+
+> Read Windows_prerequisites.txt and use Windows_prerequisites.zip
+
+## On Linux
+
+> Not ready, coming soon
+
+---
