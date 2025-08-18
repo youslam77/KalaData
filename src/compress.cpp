@@ -380,8 +380,8 @@ namespace KalaData
 		else
 		{
 			finishComp
-				<< "Finished compressing archive '" << path(origin).filename().string()
-				<< "' to folder '" << path(target).filename().string() << "'!\n"
+				<< "Finished compressing folder '" << path(origin).filename().string()
+				<< "' to archive '" << path(target).filename().string() << "'!\n"
 				<< "  - origin folder size: " << folderSize << " bytes\n"
 				<< "  - target archive size: " << archiveSize << " bytes\n"
 				<< "  - throughput: " << fixed << setprecision(2) << mbps << " MB/s\n"
