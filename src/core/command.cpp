@@ -56,9 +56,9 @@ namespace KalaData::Core
 		}
 
 		else if (parameters.size() == 2
-			&& parameters[1] == "--info")
+			&& parameters[1] == "--about")
 		{
-			Command_Info();
+			Command_About();
 			return;
 		}
 
@@ -135,11 +135,18 @@ namespace KalaData::Core
 		KalaDataCore::PrintMessage(KALADATA_VERSION "\n");
 	}
 
-	void Command::Command_Info()
+	void Command::Command_About()
 	{
 		stringstream ss{};
-		ss << "KalaData is a lightweight C++ 20 data compressor and decompressor for the '.kdat' format. "
-			<< "KDat is aimed for games but can be used for regular software too.\n";
+
+		ss << "KalaData is a custom compression and decompression tool written in C++20, "
+			<< "built entirely from scratch without external dependencies.\n"
+			<< "It uses a hybrid LZSS + Huffman pipeline to compress data efficiently, "
+			<< "while falling back to raw or empty storage when appropriate.\n"
+			<< "All data is stored in a dedicated archival format with the '.kdat' extension.\n\n"
+
+			<< "KalaData was created by and is maintained by KalaKit, an organization owned by Lost Empire Entertainment.\n"
+			<< "Official repository: 'https://github.com/KalaKit/KalaData'\n";
 
 		KalaDataCore::PrintMessage(ss.str());
 	}
@@ -150,13 +157,12 @@ namespace KalaData::Core
 		ss << "====================\n\n"
 
 			<< "Notes:\n"
-			<< "  - each command starts with the program name 'KalaData.exe' as its first parameter\n"
 			<< "  - all paths are absolute and KalaData does not take relative paths.\n"
 			<< "  - if you use '--help command' you must put a real command there, for example '--help c'\n\n"
 
 			<< "Commands:\n"
 			<< "  --v\n"
-			<< "  --info\n"
+			<< "  --about\n"
 			<< "  --help\n"
 			<< "  --help command\n"
 			<< "  --tvb\n"
@@ -177,10 +183,10 @@ namespace KalaData::Core
 			KalaDataCore::PrintMessage("Prints the KalaData version\n");
 		}
 
-		else if (commandName == "info"
-			|| commandName == "--info")
+		else if (commandName == "about"
+			|| commandName == "--about")
 		{
-			KalaDataCore::PrintMessage("Prints general info about KalaData\n");
+			KalaDataCore::PrintMessage("Prints the KalaData description\n");
 		}
 
 		else if (commandName == "help"

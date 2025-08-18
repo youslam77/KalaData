@@ -20,8 +20,8 @@ namespace KalaData::Core
 		//Print version to console
 		static void Command_Version();
 
-		//Print KalaData info to console
-		static void Command_Info();
+		//Print KalaData description to console
+		static void Command_About();
 
 		//List all commands in console
 		static void Command_Help();
