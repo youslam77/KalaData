@@ -2,3 +2,13 @@
 - added CLI
 - added command system
 - added compression and decompression with LZSS and Huffman algorithm
+
+==========================================================
+UPCOMING CHANGES
+==========================================================
+
+- per-file multithreading
+- faster match finder (hash-chain or binary-tree match finder)
+- peek one byte ahead: if taking a 1-byte literal now leads to a longer match next step, choose the literal
+- store code lengths (canonical form) and build a fixed-width or 2-level table for O(1) byte decode
+- pack 8 flags per token into one byte (bitmask) and then interleave the payloads

@@ -62,17 +62,17 @@ namespace KalaData
 			cout << message << "\n";
 			break;
 		case MessageType::MESSAGETYPE_WARNING:
-			clog << "[WARNING] " << message << "\n";
+			clog << "  " << "[WARNING] " << message << "\n";
 			break;
 		case MessageType::MESSAGETYPE_ERROR:
-			cerr << "[ERROR] " << message << "\n";
+			cerr << "  " << "[ERROR] " << message << "\n";
 			break;
 		case MessageType::MESSAGETYPE_SUCCESS:
-			cout << "[SUCCESS] " << message << "\n";
+			cout << "  " << "[SUCCESS] " << message << "\n";
 			break;
 #ifdef _DEBUG
 		case MessageType::MESSAGETYPE_DEBUG:
-			clog << "[DEBUG] " << message << "\n";
+			clog << "  " << "[DEBUG] " << message << "\n";
 			break;
 #endif
 		}

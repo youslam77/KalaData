@@ -34,7 +34,6 @@ using std::streamoff;
 using std::streamsize;
 using std::istreambuf_iterator;
 using std::vector;
-using std::stringstream;
 using std::ostringstream;
 using std::string;
 using std::to_string;
@@ -48,6 +47,7 @@ using std::priority_queue;
 using std::unique_ptr;
 using std::move;
 using std::make_unique;
+using std::memcmp;
 
 constexpr size_t WINDOW_SIZE = 4096; //4KB sliding window
 constexpr size_t LOOKAHEAD = 18;     //Max match length
@@ -146,11 +146,8 @@ namespace KalaData
 		const string& origin,
 		const string& target)
 	{
-		if (isVerboseLoggingEnabled)
-		{
-			Core::PrintMessage(
-				"Starting to compress folder '" + origin + "' to archive '" + target + "'!\n");
-		}
+		Core::PrintMessage(
+			"Starting to compress folder '" + origin + "' to archive '" + target + "'!\n");
 
 		//start clock timer
 		auto start = high_resolution_clock::now();
@@ -185,12 +182,22 @@ namespace KalaData
 		uint32_t rawCount{};
 		uint32_t emptyCount{};
 
+		const char magicVer[6] = { 'K', 'D', 'A', 'T', '0', '1' };
+		out.write(magicVer, sizeof(magicVer));
+
+		if (isVerboseLoggingEnabled)
+		{
+			Core::PrintMessage(
+				"Archive '" + target + "' version will be '" + string(magicVer, 6) + "'.");
+		}
+
 		uint32_t fileCount = (uint32_t)files.size();
 		out.write((char*)&fileCount, sizeof(uint32_t));
+
 		if (!out.good())
 		{
 			ForceClose(
-				"Write failure while building archive '" + target + "'!\n",
+				"Failed to write file header data while building archive '" + target + "'!\n",
 				ForceCloseType::TYPE_COMPRESSION);
 
 			return;
@@ -232,7 +239,7 @@ namespace KalaData
 					if (isVerboseLoggingEnabled)
 					{
 						Core::PrintMessage(
-							"'" + path(relPath).filename().string() + "' is empty. Skipping compression, storing as raw.");
+							"[EMPTY] '" + path(relPath).filename().string() + "'");
 					}
 				}
 				else
@@ -241,12 +248,11 @@ namespace KalaData
 
 					if (isVerboseLoggingEnabled)
 					{
-						stringstream ss{};
+						ostringstream ss{};
 
-						ss << "'" << path(relPath).filename().string()
-							<< "' compressed size '" + compressedSize << " bytes' "
-							<< "is not smaller than original size '" + to_string(originalSize)
-							<< " bytes'. Skipping compression, storing as raw.";
+						ss << "[RAW] '" << path(relPath).filename().string()
+							<< "' - '" << compressedSize << " bytes' "
+							<< ">= '" << originalSize << " bytes'";
 
 						Core::PrintMessage(ss.str());
 					}
@@ -258,11 +264,11 @@ namespace KalaData
 
 				if (isVerboseLoggingEnabled)
 				{
-					stringstream ss{};
+					ostringstream ss{};
 
-					ss << "'" << path(relPath).filename().string()
-						<< "' compressed size '" + compressedSize << " bytes' "
-						<< "is smaller than original size '" + to_string(originalSize) + " bytes'. Storing as compressed.";
+					ss << "[COMPRESS] '" << path(relPath).filename().string()
+						<< "' - '" << compressedSize << " bytes' "
+						<< "< '" << originalSize << " bytes'";
 
 					Core::PrintMessage(ss.str());
 				}
@@ -270,50 +276,15 @@ namespace KalaData
 
 			//write metadata
 			out.write((char*)&pathLen, sizeof(uint32_t));
-			if (!out.good())
-			{
-				ForceClose(
-					"Path length write failure while building archive '" + target + "'!\n",
-					ForceCloseType::TYPE_COMPRESSION);
-
-				return;
-			}
-
 			out.write(relPath.data(), pathLen);
-			if (!out.good())
-			{
-				ForceClose(
-					"Relative path write failure while building archive '" + target + "'!\n",
-					ForceCloseType::TYPE_COMPRESSION);
-
-				return;
-			}
-
 			out.write((char*)&method, sizeof(uint8_t));
-			if (!out.good())
-			{
-				ForceClose(
-					"Method write failure while building archive '" + target + "'!\n",
-					ForceCloseType::TYPE_COMPRESSION);
-
-				return;
-			}
-
 			out.write((char*)&originalSize, sizeof(uint64_t));
-			if (!out.good())
-			{
-				ForceClose(
-					"Original size write failure while building archive '" + target + "'!\n",
-					ForceCloseType::TYPE_COMPRESSION);
-
-				return;
-			}
-
 			out.write((char*)&finalSize, sizeof(uint64_t));
+
 			if (!out.good())
 			{
 				ForceClose(
-					"Final size write failure while building archive '" + target + "'!\n",
+					"Failed to write metadata for file '" + relPath + "' while building archive '" + target + "'!\n",
 					ForceCloseType::TYPE_COMPRESSION);
 
 				return;
@@ -326,7 +297,7 @@ namespace KalaData
 				if (!out.good())
 				{
 					ForceClose(
-						"Final data write failure while building archive '" + target + "'!\n",
+						"Failed to write final data for file '" + relPath + "' while building archive '" + target + "'!\n",
 						ForceCloseType::TYPE_COMPRESSION);
 
 					return;
@@ -337,7 +308,7 @@ namespace KalaData
 				if (isVerboseLoggingEnabled)
 				{
 					Core::PrintMessage(
-						"File '" + relPath + "' is empty, storing as 0-byte entry in archive.\n");
+						"File '" + relPath + "' is empty, storing as 0-byte entry in archive.");
 				}
 			}
 		}
@@ -361,7 +332,7 @@ namespace KalaData
 		auto ratio = (static_cast<double>(archiveSize) / folderSize) * 100.0;
 		auto factor = static_cast<double>(folderSize) / archiveSize;
 
-		stringstream finishComp{};
+		ostringstream finishComp{};
 		if (isVerboseLoggingEnabled)
 		{
 			finishComp 
@@ -397,11 +368,8 @@ namespace KalaData
 		const string& origin,
 		const string& target)
 	{
-		if (isVerboseLoggingEnabled)
-		{
-			Core::PrintMessage(
-				"Starting to decompress archive '" + origin + "' to folder '" + target + "'!\n");
-		}
+		Core::PrintMessage(
+			"Starting to decompress archive '" + origin + "' to folder '" + target + "'!\n");
 
 		//start clock timer
 		auto start = high_resolution_clock::now();
@@ -419,6 +387,38 @@ namespace KalaData
 		uint32_t compCount{};
 		uint32_t rawCount{};
 		uint32_t emptyCount{};
+
+		//read magic number
+		char magicVer[6]{};
+		in.read(magicVer, sizeof(magicVer));
+
+		//check magic
+		if (memcmp(magicVer, "KDAT", 4) != 0)
+		{
+			ForceClose(
+				"Invalid magic value in archive '" + origin + "'!\n",
+				ForceCloseType::TYPE_DECOMPRESSION);
+
+			return;
+		}
+
+		//check version
+		int version = stoi(string(magicVer + 4, 2));
+		if (version < 1
+			|| version > 99)
+		{
+			ForceClose(
+				"Unsupported archive version '" + to_string(version) + "' in '" + origin + "'!\n",
+				ForceCloseType::TYPE_DECOMPRESSION);
+
+			return;
+		}
+
+		if (isVerboseLoggingEnabled)
+		{
+			Core::PrintMessage(
+				"Archive '" + origin + "' version is '" + string(magicVer, 6) + "'.");
+		}
 
 		uint32_t fileCount{};
 		in.read((char*)&fileCount, sizeof(uint32_t));
@@ -440,54 +440,36 @@ namespace KalaData
 			return;
 		}
 
+		if (!in.good())
+		{
+			ForceClose(
+				"Unexpected EOF while reading header data in archive '" + origin + "'!\n",
+				ForceCloseType::TYPE_DECOMPRESSION);
+
+			return;
+		}
+
 		for (uint32_t i = 0; i < fileCount; i++)
 		{
 			uint32_t pathLen{};
-			if (!in.read((char*)&pathLen, sizeof(uint32_t)))
-			{
-				ForceClose(
-					"Failed to read path length from archive '" + origin + "'!\n",
-					ForceCloseType::TYPE_DECOMPRESSION);
-
-				return;
-			}
+			in.read((char*)&pathLen, sizeof(uint32_t));
 
 			string relPath(pathLen, '\0');
-			if (!in.read(relPath.data(), pathLen))
-			{
-				ForceClose(
-					"Failed to read relative path of length '" + to_string(pathLen) + "' from archive '" + origin + "'!\n",
-					ForceCloseType::TYPE_DECOMPRESSION);
-
-				return;
-			}
+			in.read(relPath.data(), pathLen);
 
 			uint8_t method{};
+			in.read((char*)&method, sizeof(uint8_t));
+
 			uint64_t originalSize{};
+			in.read((char*)&originalSize, sizeof(uint64_t));
+
 			uint64_t storedSize{};
+			in.read((char*)&storedSize, sizeof(uint64_t));
 
-			if (!in.read((char*)&method, sizeof(uint8_t)))
+			if (!in.good())
 			{
 				ForceClose(
-					"Failed to read method for file '" + relPath + "' from archive '" + origin + "'!\n",
-					ForceCloseType::TYPE_DECOMPRESSION);
-
-				return;
-			}
-
-			if (!in.read((char*)&originalSize, sizeof(uint64_t)))
-			{
-				ForceClose(
-					"Failed to read original size for file '" + relPath + "' from archive '" + origin + "'!\n",
-					ForceCloseType::TYPE_DECOMPRESSION);
-
-				return;
-			}
-
-			if (!in.read((char*)&storedSize, sizeof(uint64_t)))
-			{
-				ForceClose(
-					"Failed to read stored size for file '" + relPath + "' from archive '" + origin + "'!\n",
+					"Unexpected EOF while reading metadata in archive '" + origin + "'!\n",
 					ForceCloseType::TYPE_DECOMPRESSION);
 
 				return;
@@ -497,11 +479,11 @@ namespace KalaData
 			{
 				if (storedSize != originalSize)
 				{
-					stringstream ss{};
+					ostringstream ss{};
 
-					ss << "Stored size '" + to_string(storedSize) + "' for raw file '" + relPath + "' "
-						<< "is not the same as original size '" + to_string(originalSize) + "' "
-						<< "in archive '" + target + "' (corruption suspected)!\n";
+					ss << "Stored size '" << storedSize << "' for raw file '" << relPath << "' "
+						<< "is not the same as original size '" << originalSize << "' "
+						<< "in archive '" << target << "' (corruption suspected)!\n";
 
 					ForceClose(
 						ss.str(),
@@ -514,11 +496,11 @@ namespace KalaData
 			{
 				if (storedSize >= originalSize)
 				{
-					stringstream ss{};
+					ostringstream ss{};
 
-					ss << "Stored size '" + to_string(storedSize) + "' for compressed file '" + relPath + "' "
-						<< "is the same or bigger than the original size '" + to_string(originalSize) + "' "
-						<< "in archive '" + target + "' (corruption suspected)!\n";
+					ss << "Stored size '" << storedSize << "' for compressed file '" << relPath << "' "
+						<< "is the same or bigger than the original size '" << originalSize << "' "
+						<< "in archive '" << target << "' (corruption suspected)!\n";
 
 					ForceClose(
 						ss.str(),
@@ -567,18 +549,17 @@ namespace KalaData
 					&& isVerboseLoggingEnabled)
 				{
 					Core::PrintMessage(
-						"'" + path(relPath).filename().string() + "' is empty. Skipping decompression, restoring as raw.");
+						"[EMPTY] '" + path(relPath).filename().string() + "'");
 				}
 				else
 				{
 					if (isVerboseLoggingEnabled)
 					{
-						stringstream ss{};
+						ostringstream ss{};
 
-						ss << "'" << path(relPath).filename().string()
-							<< "' compressed size '" + storedSize << " bytes' "
-							<< "is not smaller than original size '" + to_string(originalSize)
-							<< " bytes'. Skipping decompression, restoring as raw.";
+						ss << "[RAW] '" << path(relPath).filename().string()
+							<< "' - '" << storedSize << " bytes' "
+							<< ">= '" << originalSize << " bytes'";
 
 						Core::PrintMessage(ss.str());
 					}
@@ -599,11 +580,11 @@ namespace KalaData
 			{
 				if (isVerboseLoggingEnabled)
 				{
-					stringstream ss{};
+					ostringstream ss{};
 
-					ss << "'" << path(relPath).filename().string()
-						<< "' compressed size '" + storedSize << " bytes' "
-						<< "is smaller than original size '" + to_string(originalSize) + " bytes'. Restoring as decompressed.";
+					ss << "[DECOMPRESS] '" << path(relPath).filename().string()
+						<< "' - '" + storedSize << " bytes' "
+						<< "< '" << originalSize << " bytes'";
 
 					Core::PrintMessage(ss.str());
 				}
@@ -624,9 +605,10 @@ namespace KalaData
 			//sanity check
 			if (data.size() != originalSize)
 			{
-				stringstream ss{};
-				ss << "Decompressed archive file '" << target << "' size '" << to_string(data.size())
-					<< "does not match original size '" << to_string(originalSize) + "'!\n";
+				ostringstream ss{};
+
+				ss << "Decompressed archive file '" << target << "' size '" << data.size()
+					<< "does not match original size '" << originalSize << "'!\n";
 
 				ForceClose(
 					ss.str(),
@@ -641,7 +623,7 @@ namespace KalaData
 			if (!outFile.good())
 			{
 				ForceClose(
-					"Write failure while decompiling archive '" + origin + "'!\n",
+					"Failed to extract file '" + relPath + "' from archive '" + origin + "' into target folder '" + target + "'!\n",
 					ForceCloseType::TYPE_DECOMPRESSION);
 				return;
 			}
@@ -666,7 +648,7 @@ namespace KalaData
 		auto ratio = (static_cast<double>(folderSize) / archiveSize) * 100.0;
 		auto factor = static_cast<double>(folderSize) / archiveSize;
 
-		stringstream finishDecomp{};
+		ostringstream finishDecomp{};
 
 		if (isVerboseLoggingEnabled)
 		{
@@ -873,9 +855,9 @@ void DecompressBuffer(
 
 			if (offset == 0)
 			{
-				stringstream ss{};
+				ostringstream ss{};
 
-				ss << "Offset size is '0' in LZSS stream for archive '" + target + "' (corruption suspected)!\n";
+				ss << "Offset size is '0' in LZSS stream for archive '" << target << "' (corruption suspected)!\n";
 
 				ForceClose(
 					ss.str(),
@@ -885,10 +867,10 @@ void DecompressBuffer(
 			}
 			if (offset > buffer.size())
 			{
-				stringstream ss{};
+				ostringstream ss{};
 
-				ss << "Offset size '" + to_string(offset) + "' is bigger than buffer size '"
-					<< to_string(buffer.size()) << "' in LZSS stream for archive '" + target + "' (corruption suspected)!\n";
+				ss << "Offset size '" << offset << "' is bigger than buffer size '"
+					<< buffer.size() << "' in LZSS stream for archive '" << target << "' (corruption suspected)!\n";
 
 				ForceClose(
 					ss.str(),
@@ -902,11 +884,11 @@ void DecompressBuffer(
 			{
 				if (buffer.size() >= originalSize)
 				{
-					stringstream ss{};
+					ostringstream ss{};
 
-					ss << "Decompressed size '" + to_string(buffer.size()) << "' "
-						<< "exceeds expected size '" + to_string(originalSize) << "' "
-						<< "while reading archive '" + target + "'!\n";
+					ss << "Decompressed size '" << buffer.size() << "' "
+						<< "exceeds expected size '" << originalSize << "' "
+						<< "while reading archive '" << target << "'!\n";
 
 					ForceClose(
 						ss.str(),
@@ -921,9 +903,10 @@ void DecompressBuffer(
 
 	if (buffer.size() != originalSize) 
 	{
-		stringstream ss{};
-		ss << "Decompressed size '" << to_string(buffer.size())
-			<< "' does not match expected size '" << to_string(originalSize)
+		ostringstream ss{};
+
+		ss << "Decompressed size '" << buffer.size()
+			<< "' does not match expected size '" << originalSize
 			<< "' for archive '" << target << "' (possible corruption)!\n";
 
 		ForceClose(
