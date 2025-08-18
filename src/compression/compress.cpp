@@ -64,11 +64,19 @@ static vector<uint8_t> CompressBuffer(
 
 //Decompress from an already open stream into a buffer
 static void DecompressBuffer(
-	ifstream& in,
-	vector<uint8_t> &out,
-	size_t storedSize,
+	const vector<uint8_t>& lzssStream,
+	vector<uint8_t>& out,
 	size_t originalSize,
 	const string& target);
+
+//Post-LZSS filter
+static vector<uint8_t> HuffmanEncode(const vector<uint8_t>& input);
+
+//Pre-LSZZ filter
+static vector<uint8_t> HuffmanDecode(
+	ifstream& in,
+	size_t storedSize,
+	const string& origin);
 
 namespace KalaData::Compression
 {
@@ -136,7 +144,10 @@ namespace KalaData::Compression
 			in.close();
 
 			//compress directly into memory
-			vector<uint8_t> compData = CompressBuffer(raw, relPath);
+			vector<uint8_t> lszzData = CompressBuffer(raw, relPath);
+
+			//wrap LZSS output with Huffman
+			vector<uint8_t> compData = HuffmanEncode(lszzData);
 
 			uint64_t originalSize = raw.size();
 			uint64_t compressedSize = compData.size();
@@ -456,11 +467,15 @@ namespace KalaData::Compression
 			//LZSS: decompress storedSize to originalSize
 			else if (method == 1)
 			{
+				vector<uint8_t> lzssStream = HuffmanDecode(
+					in,
+					static_cast<size_t>(storedSize),
+					origin);
+
 				//decompress
 				DecompressBuffer(
-					in,
+					lzssStream,
 					data,
-					static_cast<size_t>(storedSize),
 					static_cast<size_t>(originalSize),
 					origin);
 			}
@@ -621,9 +636,8 @@ vector<uint8_t> CompressBuffer(
 }
 
 void DecompressBuffer(
-	ifstream& in,
+	const vector<uint8_t>& lzssStream,
 	vector<uint8_t>& out,
-	size_t storedSize,
 	size_t originalSize,
 	const string& target)
 {
@@ -637,33 +651,24 @@ void DecompressBuffer(
 	vector<uint8_t> buffer{};
 	buffer.reserve(originalSize);
 
-	size_t bytesRead = 0;
+	size_t pos = 0;
 
-	while (bytesRead < storedSize)
+	while (pos < lzssStream.size())
 	{
-		uint8_t flag{};
-		if (!in.read((char*)&flag, 1))
-		{
-			ForceClose(
-				"Unexpected end of archive while reading flag in '" + target + "'!\n",
-				false);
-
-			return;
-		}
-		bytesRead += 1;
+		uint8_t flag = lzssStream[pos++];
 
 		if (flag == 1) //literal
 		{
-			uint8_t c{};
-			if (!in.read((char*)&c, 1))
+			if (pos >= lzssStream.size())
 			{
 				ForceClose(
-					"Unexpected end of archive while reading literal in '" + target + "'!\n",
+					"Unexpected end of LZSS stream while reading literal in '" + target + "'!\n",
 					false);
 
 				return;
 			}
-			bytesRead += 1;
+
+			uint8_t c = lzssStream[pos++];
 			buffer.push_back(c);
 		}
 		else //reference
@@ -671,22 +676,25 @@ void DecompressBuffer(
 			uint16_t offset{};
 			uint8_t length{};
 
-			if (!in.read((char*)&offset, sizeof(uint16_t))
-				|| !in.read((char*)&length, sizeof(uint8_t)))
+			if (pos + sizeof(uint16_t) + sizeof(uint8_t) > lzssStream.size())
 			{
 				ForceClose(
-					"Unexpected end of archive while reading reference in '" + target + "'!\n",
+					"Unexpected end of LZSS stream while reading reference in '" + target + "'!\n",
 					false);
 
 				return;
 			}
-			bytesRead += sizeof(uint16_t) + sizeof(uint8_t);
+
+			uint16_t offset = *reinterpret_cast<const uint16_t*>(&lzssStream[pos]);
+			pos += sizeof(uint16_t);
+
+			uint8_t length = lzssStream[pos++];
 
 			if (offset == 0)
 			{
 				stringstream ss{};
 
-				ss << "Offset size is '0' in archive '" + target + "' (corruption suspected)!\n";
+				ss << "Offset size is '0' in LZSS stream for archive '" + target + "' (corruption suspected)!\n";
 
 				ForceClose(
 					ss.str(),
@@ -699,7 +707,7 @@ void DecompressBuffer(
 				stringstream ss{};
 
 				ss << "Offset size '" + to_string(offset) + "' is bigger than buffer size '"
-					<< to_string(buffer.size()) << "' in archive '" + target + "' (corruption suspected)!\n";
+					<< to_string(buffer.size()) << "' in LZSS stream for archive '" + target + "' (corruption suspected)!\n";
 
 				ForceClose(
 					ss.str(),
@@ -746,4 +754,17 @@ void DecompressBuffer(
 
 	//hand decompressed data back to caller
 	out = move(buffer);
+}
+
+vector<uint8_t> HuffmanEncode(const vector<uint8_t>& input)
+{
+
+}
+
+vector<uint8_t> HuffmanDecode(
+	ifstream& in,
+	size_t storedSize,
+	const string& origin)
+{
+
 }
