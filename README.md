@@ -100,12 +100,24 @@ Target:
 
 > Example: KalaData.exe --dc C:\Archives\MyApp.kdat C:\Extracted\MyApp
 
-# Prerequisites (when compiling from source code)
+## Prerequisites for building from source
 
-## On Windows
+### On Windows
 
 > Read Windows_prerequisites.txt and use Windows_prerequisites.zip
 
-## On Linux
+### On Linux
+
+> Not ready, coming soon
+
+## How to build from source
+
+The compiled executable and its files will be placed to /release and /debug relative to the build stage
+
+### On Windows
+
+> Run 'build_windows.bat'
+
+### On Linux
 
 > Not ready, coming soon
