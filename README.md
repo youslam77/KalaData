@@ -86,6 +86,32 @@ compression/decompression success log additional rows:
   
 ---
 
+## KalaData Archive Layout
+
+### Header data
+| Offset | Size   | Field      | Description                        |
+|--------|--------|------------|------------------------------------|
+| 0x00   | 6 B    | magicVer   | Magic string + version ("KDAT01")  |
+| 0x06   | 4 B    | fileCount  | Number of file entries (uint32)    |
+
+### Metadata + file data
+| Offset (relative) | Size        | Field        | Description                                |
+|-------------------|-------------|--------------|--------------------------------------------|
+| +0x00             | 4 B         | pathLen      | Length of relative path string (uint32)    |
+| +0x04             | pathLen B   | relPath      | Relative path string (not null-terminated) |
+| +…                | 1 B         | method       | Storage flag (0 = raw, 1 = compressed)     |
+| +…                | 8 B         | originalSize | Size before compression (uint64)           |
+| +…                | 8 B         | storedSize   | Size after compression/raw (uint64)        |
+| +…                | storedSizeB | data         | File data (omitted if storedSize = 0)      |
+
+## Notes
+- Archive always starts with `KDATxx` where `xx` is the version (01–99).
+- Paths are stored exactly as written, with length prefix, no terminator.
+- Compression is only applied if `storedSize < originalSize`; otherwise file is stored raw.
+- Empty files are represented with `originalSize = 0` and `storedSize = 0`.
+
+---
+
 ## Compression
 
 The `--c` command takes in a folder which will be compressed into a `.kdat` file inside the target path parent folder.
