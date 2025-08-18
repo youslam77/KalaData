@@ -19,6 +19,7 @@
 
 using KalaData::Core;
 using KalaData::MessageType;
+using KalaData::Compress;
 
 using std::filesystem::path;
 using std::filesystem::create_directories;
@@ -49,8 +50,6 @@ using std::move;
 using std::make_unique;
 using std::memcmp;
 
-constexpr size_t WINDOW_SIZE = 4096; //4KB sliding window
-constexpr size_t LOOKAHEAD = 18;     //Max match length
 constexpr size_t MIN_MATCH = 3;
 
 enum class ForceCloseType
@@ -67,7 +66,7 @@ struct Token
 {
 	bool isLiteral;
 	uint8_t literal;
-	uint16_t offset;
+	uint32_t offset;
 	uint8_t length;
 };
 
@@ -146,6 +145,8 @@ namespace KalaData
 		const string& origin,
 		const string& target)
 	{
+		isActive = true;
+
 		Core::PrintMessage(
 			"Starting to compress folder '" + origin + "' to archive '" + target + "'!\n");
 
@@ -357,12 +358,16 @@ namespace KalaData
 		Core::PrintMessage(
 			finishComp.str(),
 			MessageType::MESSAGETYPE_SUCCESS);
+
+		isActive = false;
 	}
 
 	void Compress::DecompressToFolder(
 		const string& origin,
 		const string& target)
 	{
+		isActive = true;
+
 		Core::PrintMessage(
 			"Starting to decompress archive '" + origin + "' to folder '" + target + "'!\n");
 
@@ -578,7 +583,7 @@ namespace KalaData
 					ostringstream ss{};
 
 					ss << "[DECOMPRESS] '" << path(relPath).filename().string()
-						<< "' - '" + storedSize << " bytes' "
+						<< "' - '" << storedSize << " bytes' "
 						<< "< '" << originalSize << " bytes'";
 
 					Core::PrintMessage(ss.str());
@@ -675,6 +680,8 @@ namespace KalaData
 		Core::PrintMessage(
 			finishDecomp.str(),
 			MessageType::MESSAGETYPE_SUCCESS);
+
+		isActive = false;
 	}
 }
 
@@ -713,6 +720,9 @@ vector<uint8_t> CompressBuffer(
 	const vector<uint8_t>& input,
 	const string& origin)
 {
+	size_t windowSize = Compress::GetWindowSize();
+	size_t lookAhead = Compress::GetLookAhead();
+
 	vector<uint8_t> output{};
 
 	if (input.empty()) return output;
@@ -723,14 +733,14 @@ vector<uint8_t> CompressBuffer(
 	{
 		size_t bestLength = 0;
 		size_t bestOffset = 0;
-		size_t start = (pos > WINDOW_SIZE) ? (pos - WINDOW_SIZE) : 0;
+		size_t start = (pos > windowSize) ? (pos - windowSize) : 0;
 
 		//search backwards in window
 		for (size_t i = start; i < pos; i++)
 		{
 			size_t length = 0;
 
-			while (length < LOOKAHEAD
+			while (length < lookAhead
 				&& pos + length < input.size()
 				&& input[i + length] == input[pos + length])
 			{
@@ -747,7 +757,7 @@ vector<uint8_t> CompressBuffer(
 
 		if (bestLength >= MIN_MATCH)
 		{
-			if (bestOffset >= UINT16_MAX)
+			if (bestOffset >= UINT32_MAX)
 			{
 				ForceClose(
 					"Offset too large for file '" + origin + "' during compressing (data window exceeded)!\n",
@@ -759,10 +769,10 @@ vector<uint8_t> CompressBuffer(
 			uint8_t flag = 0;
 			output.push_back(flag);
 
-			uint16_t offset16 = (uint16_t)bestOffset;
+			uint32_t offset = (uint32_t)bestOffset;
 			output.insert(output.end(),
-				reinterpret_cast<uint8_t*>(&offset16),
-				reinterpret_cast<uint8_t*>(&offset16) + sizeof(uint16_t));
+				reinterpret_cast<uint8_t*>(&offset),
+				reinterpret_cast<uint8_t*>(&offset) + sizeof(uint32_t));
 
 			if (bestLength > UINT8_MAX)
 			{
@@ -844,8 +854,8 @@ void DecompressBuffer(
 				return;
 			}
 
-			uint16_t offset = *reinterpret_cast<const uint16_t*>(&lzssStream[pos]);
-			pos += sizeof(uint16_t);
+			uint32_t offset = *reinterpret_cast<const uint32_t*>(&lzssStream[pos]);
+			pos += sizeof(uint32_t);
 
 			uint8_t length = lzssStream[pos++];
 

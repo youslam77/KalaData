@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <iomanip>
 #include <fstream>
+#include <unordered_map>
 
 #include "core.hpp"
 #include "command.hpp"
@@ -29,12 +30,28 @@ using std::fixed;
 using std::setprecision;
 using std::ofstream;
 using std::ios;
+using std::unordered_map;
 
 static uint64_t GetFolderSize(const string& folderPath);
 
 static bool CanWriteToFolder(const string& folderPath);
 
 static string ConvertSizeToString(uint64_t size);
+
+struct Preset
+{
+	size_t window;
+	size_t lookahead;
+};
+
+static const unordered_map<string, Preset> presets =
+{
+	{ "fastest",  { KalaData::WINDOW_SIZE_FASTEST,  KalaData::LOOKAHEAD_FASTEST  } },
+	{ "fast",     { KalaData::WINDOW_SIZE_FAST,     KalaData::LOOKAHEAD_FAST     } },
+	{ "balanced", { KalaData::WINDOW_SIZE_BALANCED, KalaData::LOOKAHEAD_BALANCED } },
+	{ "slow",     { KalaData::WINDOW_SIZE_SLOW,     KalaData::LOOKAHEAD_SLOW     } },
+	{ "archive",  { KalaData::WINDOW_SIZE_ARCHIVE,  KalaData::LOOKAHEAD_ARCHIVE  } }
+};
 
 //5GB max file size
 constexpr uint64_t maxFolderSize = 5ull * 1024 * 1024 * 1024;
@@ -43,6 +60,14 @@ namespace KalaData
 {
 	void Command::HandleCommand(vector<string> parameters)
 	{
+		if (Compress::IsActive())
+		{
+			Core::PrintMessage(
+				"Cannot write any commands while compressing or decompressing!",
+				MessageType::MESSAGETYPE_ERROR);
+			return;
+		}
+
 		//remove 'KalaData> ' at the front of the parameters
 		vector<string> cleanedParameters = parameters;
 		cleanedParameters.erase(cleanedParameters.begin());
@@ -72,6 +97,12 @@ namespace KalaData
 		{
 			Command_Help_Command(parameters[2]);
 			return;
+		}
+
+		else if (parameters.size() == 3
+			&& parameters[1] == "-sm")
+		{
+			Command_SetCompressionMode(parameters[2]);
 		}
 
 		else if (parameters.size() == 2
@@ -275,6 +306,26 @@ namespace KalaData
 				"Cannot get info about command '" + commandName + "' because it does not exist! Type '--help' to list all commands\n",
 				MessageType::MESSAGETYPE_ERROR);
 		}
+	}
+
+	void Command::Command_SetCompressionMode(const string& mode)
+	{
+		auto it = presets.find(mode);
+		if (it != presets.end())
+		{
+			Core::PrintMessage(
+				"Compression mode '" + mode + "' does not exist!\n",
+				MessageType::MESSAGETYPE_ERROR);
+
+			return;
+		}
+
+		Compress::SetWindowSize(it->second.window);
+		Compress::SetLookAhead(it->second.lookahead);
+
+		Core::PrintMessage(
+			"Set compression mode to '" + mode + "'!\n",
+			MessageType::MESSAGETYPE_SUCCESS);
 	}
 
 	void Command::Command_ToggleCompressionVerbosity()
