@@ -162,6 +162,7 @@ namespace KalaData::Core
 			<< "  --info                     - prints general info about KalaData\n"
 			<< "  --help                     - lists all commands\n"
 			<< "  --help x                   - prints additional info about selected command 'x'\n"
+			<< "  --tvb                      - toggles compression verbose messages on and off\n"
 			<< "  --compress origin target   - compresses folder 'origin' into file 'target'\n"
 			<< "  --c origin target          - same as above\n"
 			<< "  --decompress origin target - decompresses file 'origin' into folder 'target'\n"
