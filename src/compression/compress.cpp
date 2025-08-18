@@ -237,11 +237,18 @@ namespace KalaData::Compression
 		auto end = high_resolution_clock::now();
 		auto durationSec = duration<double>(end - start).count();
 
+		uint64_t originalSize{};
+		for (auto& p : recursive_directory_iterator(origin))
+		{
+			if (is_regular_file(p)) originalSize += file_size(p);
+		}
+
 		string finalSize = to_string(file_size(target));
 
 		stringstream finishComp{};
 		finishComp << "Finished compressing folder '" + origin + "' to archive '" + target + "'!\n"
-			<< "  - compressed size: " << finalSize << " bytes\n"
+			<< "  - origin folder size: " << to_string(originalSize) << " bytes\n"
+			<< "  - target archive size: " << finalSize << " bytes\n"
 			<< "  - total files: " << to_string(fileCount) << "\n"
 			<< "  - compressed: " << to_string(compCount) << "\n"
 			<< "  - stored raw: " << to_string(rawCount) << "\n"
@@ -410,6 +417,8 @@ namespace KalaData::Compression
 		auto end = high_resolution_clock::now();
 		auto durationSec = duration<double>(end - start).count();
 
+		string originalSize = to_string(file_size(origin));
+
 		uint64_t finalSize{};
 		for (auto& p : recursive_directory_iterator(target))
 		{
@@ -418,7 +427,8 @@ namespace KalaData::Compression
 
 		stringstream finishDecomp{};
 		finishDecomp << "Finished decompressing archive '" + origin + "' to folder '" + target + "'!\n"
-			<< "  - uncompressed size: " << to_string(finalSize) << " bytes\n"
+			<< "  - origin archive size: " << originalSize << " bytes\n"
+			<< "  - target folder size: " << to_string(finalSize) << " bytes\n"
 			<< "  - total files: " << to_string(fileCount) << "\n"
 			<< "  - decompressed: " << to_string(compCount) << "\n"
 			<< "  - unpacked raw: " << to_string(rawCount) << "\n"
