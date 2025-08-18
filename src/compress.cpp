@@ -188,8 +188,14 @@ namespace KalaData
 
 		if (isVerboseLoggingEnabled)
 		{
-			Core::PrintMessage(
-				"Archive '" + target + "' version will be '" + string(magicVer, 6) + "'.");
+			ostringstream ss{};
+
+			ss << "Window size is '" << WINDOW_SIZE << "'.\n"
+				<< "Lookahead is '" << LOOKAHEAD << "'.\n"
+				<< "Min match is '" << MIN_MATCH << "'.\n\n"
+				<< "Archive '" + target + "' version will be '" + string(magicVer, 6) + "'.\n";
+
+			Core::PrintMessage(ss.str());
 		}
 
 		uint32_t fileCount = (uint32_t)files.size();
@@ -416,8 +422,14 @@ namespace KalaData
 
 		if (isVerboseLoggingEnabled)
 		{
-			Core::PrintMessage(
-				"Archive '" + origin + "' version is '" + string(magicVer, 6) + "'.");
+			ostringstream ss{};
+
+			ss << "Window size is '" << WINDOW_SIZE << "'.\n"
+				<< "Lookahead is '" << LOOKAHEAD << "'.\n"
+				<< "Min match is '" << MIN_MATCH << "'.\n\n"
+				<< "Archive '" + target + "' version is '" + string(magicVer, 6) + "'.\n";
+
+			Core::PrintMessage(ss.str());
 		}
 
 		uint32_t fileCount{};

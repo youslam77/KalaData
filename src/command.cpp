@@ -338,7 +338,8 @@ namespace KalaData
 		string stateStr = state ? "true" : "false";
 
 		Core::PrintMessage(
-			"Set compression verbose logging state to '" + stateStr + "'!\n");
+			"Set compression verbose logging state to '" + stateStr + "'!\n",
+			MessageType::MESSAGETYPE_SUCCESS);
 	}
 
 	void Command::Command_Compress(
