@@ -22,6 +22,7 @@ using std::filesystem::create_directories;
 using std::filesystem::relative;
 using std::filesystem::is_regular_file;
 using std::filesystem::weakly_canonical;
+using std::filesystem::file_size;
 using std::filesystem::recursive_directory_iterator;
 using std::ofstream;
 using std::ifstream;
@@ -233,8 +234,11 @@ namespace KalaData::Compression
 		auto end = high_resolution_clock::now();
 		auto durationSec = duration<double>(end - start).count();
 
+		string finalSize = to_string(file_size(target));
+
 		stringstream finishComp{};
 		finishComp << "Finished compressing folder '" + origin + "' to archive '" + target + "'!\n"
+			<< "  - compressed size: " << finalSize << "\n"
 			<< "  - total files: " << to_string(fileCount) << "\n"
 			<< "  - compressed: " << to_string(compCount) << "\n"
 			<< "  - stored raw: " << to_string(rawCount) << "\n"
@@ -402,8 +406,15 @@ namespace KalaData::Compression
 		auto end = high_resolution_clock::now();
 		auto durationSec = duration<double>(end - start).count();
 
+		uint64_t finalSize{};
+		for (auto& p : recursive_directory_iterator(target))
+		{
+			if (is_regular_file(p)) finalSize += file_size(p);
+		}
+
 		stringstream finishDecomp{};
 		finishDecomp << "Finished decompressing archive '" + origin + "' to folder '" + target + "'!\n"
+			<< "  - uncompressed size: " << to_string(finalSize) << "\n"
 			<< "  - total files: " << to_string(fileCount) << "\n"
 			<< "  - decompressed: " << to_string(compCount) << "\n"
 			<< "  - unpacked raw: " << to_string(rawCount) << "\n"
