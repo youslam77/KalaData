@@ -1,6 +1,9 @@
 ﻿cmake_minimum_required(VERSION 3.29.2)
 
-project("KalaData" VERSION 0.1.0.0 LANGUAGES C CXX)
+set(KALADATA_VERSION "KalaData 0.1 Alpha")
+set(KALADATA_VERSION_NUMBER 0.1.0.0)
+
+project("KalaData" VERSION ${KALADATA_VERSION_NUMBER} LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -108,6 +111,11 @@ if (WIN32)
 
     target_sources(KalaData PRIVATE "${CMAKE_BINARY_DIR}/version.rc")
 endif()
+
+# Expose version string
+add_compile_definitions(
+	KALADATA_VERSION="${KALADATA_VERSION}"
+)
 
 # Installation
 set(CMAKE_INSTALL_BINDIR bin)

@@ -29,7 +29,7 @@ call :BuildWithPreset debug Debug
 call :BuildWithPreset release Release
 
 echo =====================================
-echo [SUCCESS] Finished building and installing Circuit Chan!
+echo [SUCCESS] Finished building and installing KalaData!
 echo =====================================
 echo.
 pause
@@ -50,7 +50,7 @@ set "PRESET=%~1"
 set "CONFIG=%~2"
 
 echo =====================================
-echo [INFO] Building Circuit Chan in %PRESET% (%CONFIG%) mode...
+echo [INFO] Building KalaData in %PRESET% (%CONFIG%) mode...
 echo =====================================
 echo.
 

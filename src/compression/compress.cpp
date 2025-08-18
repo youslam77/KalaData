@@ -146,9 +146,11 @@ namespace KalaData::Compression
 		const string& origin,
 		const string& target)
 	{
-		KalaDataCore::PrintMessage(
-			"Starting to compress folder '" + origin + "' to archive '" + target + "'!\n",
-			MessageType::MESSAGETYPE_DEBUG);
+		if (isVerboseLoggingEnabled)
+		{
+			KalaDataCore::PrintMessage(
+				"Starting to compress folder '" + origin + "' to archive '" + target + "'!\n");
+		}
 
 		//start clock timer
 		auto start = high_resolution_clock::now();
@@ -223,7 +225,16 @@ namespace KalaData::Compression
 
 			if (!useCompressed)
 			{
-				if (originalSize == 0) emptyCount++;
+				if (originalSize == 0)
+				{
+					emptyCount++;
+
+					if (isVerboseLoggingEnabled)
+					{
+						KalaDataCore::PrintMessage(
+							"'" + path(relPath).filename().string() + "' is empty. Skipping compression, storing as raw.");
+					}
+				}
 				else
 				{
 					rawCount++;
@@ -231,16 +242,31 @@ namespace KalaData::Compression
 					if (isVerboseLoggingEnabled)
 					{
 						stringstream ss{};
-						ss << "Skipping storing compressed data for relative path '" 
-							<< relPath << "' and storing as raw "
-							<< "because compressed size '" + to_string(compressedSize) << "' "
-							<< "is not smaller than original size '" + to_string(originalSize) + "'!\n";
+
+						ss << "'" << path(relPath).filename().string()
+							<< "' compressed size '" + compressedSize << " bytes' "
+							<< "is not smaller than original size '" + to_string(originalSize)
+							<< " bytes'. Skipping compression, storing as raw.";
 
 						KalaDataCore::PrintMessage(ss.str());
 					}
 				}
 			}
-			else compCount++;
+			else
+			{
+				compCount++;
+
+				if (isVerboseLoggingEnabled)
+				{
+					stringstream ss{};
+
+					ss << "'" << path(relPath).filename().string()
+						<< "' compressed size '" + compressedSize << " bytes' "
+						<< "is smaller than original size '" + to_string(originalSize) + " bytes'. Storing as compressed.";
+
+					KalaDataCore::PrintMessage(ss.str());
+				}
+			}
 
 			//write metadata
 			out.write((char*)&pathLen, sizeof(uint32_t));
@@ -323,22 +349,43 @@ namespace KalaData::Compression
 		auto end = high_resolution_clock::now();
 		auto durationSec = duration<double>(end - start).count();
 
-		uint64_t originalSize{};
+		uint64_t folderSize{};
 		for (auto& p : recursive_directory_iterator(origin))
 		{
-			if (is_regular_file(p)) originalSize += file_size(p);
+			if (is_regular_file(p)) folderSize += file_size(p);
 		}
 
+		auto archiveSize = file_size(target);
+		auto mbps = static_cast<double>(folderSize) / (1024.0 * 1024.0) / durationSec;
+
+		auto ratio = (static_cast<double>(archiveSize) / folderSize) * 100.0;
+		auto factor = static_cast<double>(folderSize) / archiveSize;
+
 		stringstream finishComp{};
-		finishComp << "Finished compressing folder '" + origin + "' to archive '" + target + "'!\n"
-			<< "  - origin folder size: " << to_string(originalSize) << " bytes\n"
-			<< "  - target archive size: " << to_string(file_size(target)) << " bytes\n"
-			<< "  - total files: " << to_string(fileCount) << "\n"
-			<< "  - compressed: " << to_string(compCount) << "\n"
-			<< "  - stored raw: " << to_string(rawCount) << "\n"
-			<< "  - empty: " << to_string(emptyCount) << "\n"
-			<< "  - duration: "
-			<< fixed << setprecision(2) << durationSec << " seconds\n";
+		if (isVerboseLoggingEnabled)
+		{
+			finishComp 
+				<< "Finished compressing folder '" << origin << "' to archive '" << target << "'!\n"
+				<< "  - origin folder size: " << folderSize << " bytes\n"
+				<< "  - target archive size: " << archiveSize << " bytes\n"
+				<< "  - compression ratio: " << fixed << setprecision(2) << ratio << "% ("
+				<< fixed << setprecision(2) << factor << "x smaller)\n"
+				<< "  - throughput: " << fixed << setprecision(2) << mbps << " MB/s\n"
+				<< "  - total files: " << fileCount << "\n"
+				<< "  - compressed: " << compCount << "\n"
+				<< "  - stored raw: " << rawCount << "\n"
+				<< "  - empty: " << emptyCount << "\n"
+				<< "  - duration: " << fixed << setprecision(2) << durationSec << " seconds\n";
+		}
+		else
+		{
+			finishComp
+				<< "Finished decompressing archive '" << path(origin).filename().string()
+				<< "' to folder '" << path(target).filename().string() << "'!\n"
+				<< "  - origin archive size: " << archiveSize << " bytes\n"
+				<< "  - target folder size: " << folderSize << " bytes\n"
+				<< "  - duration: " << fixed << setprecision(2) << durationSec << " seconds\n";
+		}
 
 		KalaDataCore::PrintMessage(
 			finishComp.str(),
@@ -349,9 +396,11 @@ namespace KalaData::Compression
 		const string& origin,
 		const string& target)
 	{
-		KalaDataCore::PrintMessage(
-			"Starting to decompress archive '" + origin + "' to folder '" + target + "'!\n",
-			MessageType::MESSAGETYPE_DEBUG);
+		if (isVerboseLoggingEnabled)
+		{
+			KalaDataCore::PrintMessage(
+				"Starting to decompress archive '" + origin + "' to folder '" + target + "'!\n");
+		}
 
 		//start clock timer
 		auto start = high_resolution_clock::now();
@@ -513,8 +562,26 @@ namespace KalaData::Compression
 			//raw: copy exactly storedSize bytes
 			if (method == 0)
 			{
-				if (storedSize > 0)
+				if (storedSize == 0
+					&& isVerboseLoggingEnabled)
 				{
+					KalaDataCore::PrintMessage(
+						"'" + path(relPath).filename().string() + "' is empty. Skipping decompression, restoring as raw.");
+				}
+				else
+				{
+					if (isVerboseLoggingEnabled)
+					{
+						stringstream ss{};
+
+						ss << "'" << path(relPath).filename().string()
+							<< "' compressed size '" + storedSize << " bytes' "
+							<< "is not smaller than original size '" + to_string(originalSize)
+							<< " bytes'. Skipping decompression, restoring as raw.";
+
+						KalaDataCore::PrintMessage(ss.str());
+					}
+
 					data.resize(static_cast<size_t>(storedSize));
 					if (!in.read((char*)data.data(), static_cast<streamsize>(storedSize)))
 					{
@@ -529,6 +596,17 @@ namespace KalaData::Compression
 			//LZSS: decompress storedSize to originalSize
 			else if (method == 1)
 			{
+				if (isVerboseLoggingEnabled)
+				{
+					stringstream ss{};
+
+					ss << "'" << path(relPath).filename().string()
+						<< "' compressed size '" + storedSize << " bytes' "
+						<< "is smaller than original size '" + to_string(originalSize) + " bytes'. Restoring as decompressed.";
+
+					KalaDataCore::PrintMessage(ss.str());
+				}
+
 				vector<uint8_t> lzssStream = HuffmanDecode(
 					in,
 					static_cast<size_t>(storedSize),
@@ -575,22 +653,44 @@ namespace KalaData::Compression
 		auto end = high_resolution_clock::now();
 		auto durationSec = duration<double>(end - start).count();
 
-		uint64_t finalSize{};
+		uint64_t folderSize{};
 		for (auto& p : recursive_directory_iterator(target))
 		{
-			if (is_regular_file(p)) finalSize += file_size(p);
+			if (is_regular_file(p)) folderSize += file_size(p);
 		}
 
+		auto archiveSize = file_size(origin);
+		auto mbps = static_cast<double>(archiveSize) / (1024.0 * 1024.0) / durationSec;
+
+		auto ratio = (static_cast<double>(folderSize) / archiveSize) * 100.0;
+		auto factor = static_cast<double>(folderSize) / archiveSize;
+
 		stringstream finishDecomp{};
-		finishDecomp << "Finished decompressing archive '" + origin + "' to folder '" + target + "'!\n"
-			<< "  - origin archive size: " << to_string(file_size(origin)) << " bytes\n"
-			<< "  - target folder size: " << to_string(finalSize) << " bytes\n"
-			<< "  - total files: " << to_string(fileCount) << "\n"
-			<< "  - decompressed: " << to_string(compCount) << "\n"
-			<< "  - unpacked raw: " << to_string(rawCount) << "\n"
-			<< "  - empty: " << to_string(emptyCount) << "\n"
-			<< "  - duration: "
-			<< fixed << setprecision(2) << durationSec << " seconds\n";
+
+		if (isVerboseLoggingEnabled)
+		{
+			finishDecomp 
+				<< "Finished decompressing archive '" << origin << "' to folder '" << target << "'!\n"
+				<< "  - origin archive size: " << archiveSize << " bytes\n"
+				<< "  - target folder size: " << folderSize << " bytes\n"
+				<< "  - expansion ratio: " << fixed << setprecision(2) << ratio << "% ("
+				<< fixed << setprecision(2) << factor << "x larger)\n"
+				<< "  - throughput: " << fixed << setprecision(2) << mbps << " MB/s\n"
+				<< "  - total files: " << fileCount << "\n"
+				<< "  - decompressed: " << compCount << "\n"
+				<< "  - unpacked raw: " << rawCount << "\n"
+				<< "  - empty: " << emptyCount << "\n"
+				<< "  - duration: " << fixed << setprecision(2) << durationSec << " seconds\n";
+		}
+		else
+		{
+			finishDecomp 
+				<< "Finished decompressing archive '" << path(origin).filename().string()
+				<< "' to folder '" << path(target).filename().string() << "'!\n"
+				<< "  - origin archive size: " << archiveSize << " bytes\n"
+				<< "  - target folder size: " << folderSize << " bytes\n"
+				<< "  - duration: " << fixed << setprecision(2) << durationSec << " seconds\n";
+		}
 
 		KalaDataCore::PrintMessage(
 			finishDecomp.str(),
@@ -854,14 +954,7 @@ vector<uint8_t> HuffmanEncode(
 	const vector<uint8_t>& input,
 	const string& origin)
 {
-	if (input.empty())
-	{
-		ForceClose(
-			"HuffmanEncode called with empty input for '" + origin + "'",
-			ForceCloseType::TYPE_HUFFMAN_ENCODE);
-
-		return {};
-	}
+	if (input.empty()) return {};
 
 	size_t freq[256]{};
 	for (auto b : input) freq[b]++;

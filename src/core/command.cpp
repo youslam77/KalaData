@@ -50,8 +50,7 @@ namespace KalaData::Core
 		cleanedParameters.erase(cleanedParameters.begin());
 
 		if (parameters.size() == 2
-			&& (parameters[1] == "--v"
-			|| parameters[1] == "--version"))
+			&& parameters[1] == "--v")
 		{
 			Command_Version();
 		}
@@ -84,15 +83,13 @@ namespace KalaData::Core
 		}
 
 		else if (parameters.size() == 4
-			&& (parameters[1] == "--c"
-			|| parameters[1] == "--compress"))
+			&& parameters[1] == "--c")
 		{
 			Command_Compress(parameters[2], parameters[3]);
 		}
 
 		else if (parameters.size() == 4
-			&& (parameters[1] == "--dc"
-			|| parameters[1] == "--decompress"))
+			&& parameters[1] == "--dc")
 		{
 			Command_Decompress(parameters[2], parameters[3]);
 		}
@@ -135,7 +132,7 @@ namespace KalaData::Core
 
 	void Command::Command_Version()
 	{
-		KalaDataCore::PrintMessage("KalaData version: 0.1 Alpha\n");
+		KalaDataCore::PrintMessage(KALADATA_VERSION "\n");
 	}
 
 	void Command::Command_Info()
@@ -154,20 +151,18 @@ namespace KalaData::Core
 
 			<< "Notes:\n"
 			<< "  - each command starts with the program name 'KalaData.exe' as its first parameter\n"
-			<< "  - all paths are absolute and KalaData does not take relative paths.\n\n"
+			<< "  - all paths are absolute and KalaData does not take relative paths.\n"
+			<< "  - if you use '--help command' you must put a real command there, for example '--help c'\n\n"
 
 			<< "Commands:\n"
-			<< "  --version                  - prints the KalaData version\n"
-			<< "  --v                        - same as above\n"
-			<< "  --info                     - prints general info about KalaData\n"
-			<< "  --help                     - lists all commands\n"
-			<< "  --help x                   - prints additional info about selected command 'x'\n"
-			<< "  --tvb                      - toggles compression verbose messages on and off\n"
-			<< "  --compress origin target   - compresses folder 'origin' into file 'target'\n"
-			<< "  --c origin target          - same as above\n"
-			<< "  --decompress origin target - decompresses file 'origin' into folder 'target'\n"
-			<< "  --dc origin target         - same as above\n"
-			<< "  --exit                     - shuts down KalaData\n\n"
+			<< "  --v\n"
+			<< "  --info\n"
+			<< "  --help\n"
+			<< "  --help command\n"
+			<< "  --tvb\n"
+			<< "  --c\n"
+			<< "  --dc\n"
+			<< "  --exit\n\n"
 
 			<< "====================\n";
 
@@ -176,9 +171,7 @@ namespace KalaData::Core
 
 	void Command::Command_Help_Command(const string& commandName)
 	{
-		if (commandName == "version"
-			|| commandName == "--version"
-			|| commandName == "v"
+		if (commandName == "v"
 			|| commandName == "--v")
 		{
 			KalaDataCore::PrintMessage("Prints the KalaData version\n");
@@ -202,41 +195,45 @@ namespace KalaData::Core
 			KalaDataCore::PrintMessage("Toggles compression verbose messages on and off\n");
 		}
 
-		else if (commandName == "compress"
-			|| commandName == "--compress"
-			|| commandName == "c"
+		else if (commandName == "c"
 			|| commandName == "--c")
 		{
 			stringstream ss{};
 
 			ss << "Takes in a folder which will be compressed into a '.kdat' file inside the target path parent folder.\n\n"
-				<< "Requirements and restrictions:\n"
-				<< "  - Origin path must exist\n"
-				<< "  - Origin must be a folder\n"
-				<< "  - Origin folder must not be empty\n"
-				<< "  - Origin folder size must not exceed 5GB\n"
-				<< "  - Target path must not exist\n"
-				<< "  -	Target path must have the '.kdat' extension\n"
-				<< "  - Target path parent folder must be writable\n";
+				<< "Requirements and restrictions:\n\n"
+
+				<< "Origin:\n"
+				<< "  - path must exist\n"
+				<< "  - path must be a folder\n"
+				<< "  - folder must not be empty\n"
+				<< "  - folder size must not exceed 5GB\n\n"
+
+				<< "Target:\n"
+				<< "  - path must not exist\n"
+				<< "  - path must have the '.kdat' extension\n"
+				<< "  - path parent folder must be writable\n";
 
 			KalaDataCore::PrintMessage(ss.str());
 		}
 
-		else if (commandName == "decompress"
-			|| commandName == "--decompress"
-			|| commandName == "dc"
+		else if (commandName == "dc"
 			|| commandName == "--dc")
 		{
 			stringstream ss{};
 
-			ss << "Takes in the compressed '.kdat' file path which will be decompressed inside the target folder.\n\n"
-				<< "Requirements and restrictions:\n"
-				<< "  - Origin must exist\n"
-				<< "  - Origin must be a regular file\n"
-				<< "  -	Origin must have the '.kdat' extension\n"
-				<< "  - Target path must exist\n"
-				<< "  - Target path must be a folder"
-				<< "  - Target folder must be writable\n";
+			ss << "Takes in a compressed '.kdat' file path which will be decompressed inside the target folder.\n\n"
+				<< "Requirements and restrictions:\n\n"
+
+				<< "Origin:\n"
+				<< "  - path must exist\n"
+				<< "  - path must be a regular file\n"
+				<< "  - path must have the '.kdat' extension\n\n"
+
+				<< "Target:\n"
+				<< "  - path must exist\n"
+				<< "  - path must be a folder\n"
+				<< "  - folder must be writable\n";
 
 			KalaDataCore::PrintMessage(ss.str());
 		}
