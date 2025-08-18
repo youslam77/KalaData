@@ -364,8 +364,14 @@ namespace KalaData
 		Compress::SetWindowSize(it->second.window);
 		Compress::SetLookAhead(it->second.lookahead);
 
+		ostringstream ss{};
+
+		ss << "Set compression mode to '" + mode + "'!\n"
+			<< "  Window size is '" << Compress::GetWindowSize() << " bytes'\n"
+			<< "  Lookahead is '" << Compress::GetLookAhead() << "'\n";
+
 		Core::PrintMessage(
-			"Set compression mode to '" + mode + "'!\n",
+			ss.str(),
 			MessageType::MESSAGETYPE_SUCCESS);
 	}
 
