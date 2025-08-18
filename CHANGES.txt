@@ -1,2 +1,4 @@
-0.0.1:
-- 
+0.1:
+- added CLI
+- added command system
+- added compression and decompression with LZSS and Huffman algorithm
