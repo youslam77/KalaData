@@ -28,6 +28,7 @@ using std::ofstream;
 using std::ifstream;
 using std::ios;
 using std::streamoff;
+using std::streamsize;
 using std::istreambuf_iterator;
 using std::vector;
 using std::stringstream;
@@ -145,6 +146,8 @@ namespace KalaData::Compression
 			const vector<uint8_t>& finalData = useCompressed ? compData : raw;
 			uint64_t finalSize = useCompressed ? compressedSize : originalSize;
 
+			uint8_t method = useCompressed ? 1 : 0; //1 - LZSS, 0 = raw
+
 			if (!useCompressed)
 			{
 				if (originalSize == 0) emptyCount++;
@@ -182,6 +185,16 @@ namespace KalaData::Compression
 			{
 				ForceClose(
 					"Relative path write failure while building archive '" + target + "'!\n",
+					true);
+
+				return;
+			}
+
+			out.write((char*)&method, sizeof(uint8_t));
+			if (!out.good())
+			{
+				ForceClose(
+					"Method write failure while building archive '" + target + "'!\n",
 					true);
 
 				return;
@@ -326,8 +339,19 @@ namespace KalaData::Compression
 				return;
 			}
 
+			uint8_t method{};
 			uint64_t originalSize{};
 			uint64_t storedSize{};
+
+			if (!in.read((char*)&method, sizeof(uint8_t)))
+			{
+				ForceClose(
+					"Failed to read method for file '" + relPath + "' from archive '" + origin + "'!\n",
+					false);
+
+				return;
+			}
+
 			if (!in.read((char*)&originalSize, sizeof(uint64_t)))
 			{
 				ForceClose(
@@ -340,7 +364,50 @@ namespace KalaData::Compression
 			if (!in.read((char*)&storedSize, sizeof(uint64_t)))
 			{
 				ForceClose(
-					"Failed to read compressed size for file '" + relPath + "' from archive '" + origin + "'!\n",
+					"Failed to read stored size for file '" + relPath + "' from archive '" + origin + "'!\n",
+					false);
+
+				return;
+			}
+
+			if (method == 0)
+			{
+				if (storedSize != originalSize)
+				{
+					stringstream ss{};
+
+					ss << "Stored size '" + to_string(storedSize) + "' for raw file '" + relPath + "' "
+						<< "is not the same as original size '" + to_string(originalSize) + "' "
+						<< "in archive '" + target + "' (corruption suspected)!\n";
+
+					ForceClose(
+						ss.str(),
+						false);
+
+					return;
+				}
+			}
+			else if (method == 1)
+			{
+				if (storedSize >= originalSize)
+				{
+					stringstream ss{};
+
+					ss << "Stored size '" + to_string(storedSize) + "' for compressed file '" + relPath + "' "
+						<< "is the same or bigger than the original size '" + to_string(originalSize) + "' "
+						<< "in archive '" + target + "' (corruption suspected)!\n";
+
+					ForceClose(
+						ss.str(),
+						false);
+
+					return;
+				}
+			}
+			else
+			{
+				ForceClose(
+					"Unknown method storage flag '" + to_string(method) + "' in archive '" + origin + "'!\n",
 					false);
 
 				return;
@@ -370,13 +437,33 @@ namespace KalaData::Compression
 			vector<uint8_t> data{};
 			auto storedStart = in.tellg();
 
-			//decompress
-			DecompressBuffer(
-				in,
-				data,
-				storedSize,
-				originalSize,
-				origin);
+			//raw: copy exactly storedSize bytes
+			if (method == 0)
+			{
+				if (storedSize > 0)
+				{
+					data.resize(static_cast<size_t>(storedSize));
+					if (!in.read((char*)data.data(), static_cast<streamsize>(storedSize)))
+					{
+						ForceClose(
+							"Unexpected end of archive while reading raw data for '" + relPath + "' in archive '" + origin + "'!\n",
+							false);
+
+						return;
+					}
+				}
+			}
+			//LZSS: decompress storedSize to originalSize
+			else if (method == 1)
+			{
+				//decompress
+				DecompressBuffer(
+					in,
+					data,
+					static_cast<size_t>(storedSize),
+					static_cast<size_t>(originalSize),
+					origin);
+			}
 
 			//sanity check
 			if (data.size() != originalSize)
@@ -405,10 +492,6 @@ namespace KalaData::Compression
 
 			//done writing
 			outFile.close();
-
-			//advance past compressed chunk in archive
-			in.seekg(storedStart);
-			in.seekg((streamoff)storedSize, ios::cur);
 		}
 
 		//end timer
@@ -544,6 +627,13 @@ void DecompressBuffer(
 	size_t originalSize,
 	const string& target)
 {
+	//skip decompressing empty file
+	if (originalSize == 0)
+	{
+		out.clear();
+		return;
+	}
+
 	vector<uint8_t> buffer{};
 	buffer.reserve(originalSize);
 
@@ -592,6 +682,18 @@ void DecompressBuffer(
 			}
 			bytesRead += sizeof(uint16_t) + sizeof(uint8_t);
 
+			if (offset == 0)
+			{
+				stringstream ss{};
+
+				ss << "Offset size is '0' in archive '" + target + "' (corruption suspected)!\n";
+
+				ForceClose(
+					ss.str(),
+					false);
+
+				return;
+			}
 			if (offset > buffer.size())
 			{
 				stringstream ss{};
@@ -638,6 +740,8 @@ void DecompressBuffer(
 		ForceClose(
 			ss.str(),
 			false);
+
+		return;
 	}
 
 	//hand decompressed data back to caller
