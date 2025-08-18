@@ -14,7 +14,7 @@ All data is stored in a dedicated archival format with the `.kdat` extension.
 KalaData archives have their own internal structure, designed specifically for this tool.
 
 ## Features
-- Independent archive format (.kdat), not based on ZIP, RAR, or 7z.
+- Independent archive format `.kdat`, not based on `ZIP`, `RAR`, `7z` or other archival formats.
 - Hybrid compression:
   - LZSS for dictionary-based redundancy removal.
   - Huffman coding for entropy reduction.
@@ -81,7 +81,7 @@ Target:
   - path must have the `.kdat` extension
   - path parent folder must be writable
 
-> Example: KalaData.exe --c C:\Projects\MyApp C:\Archives\MyApp.kdat
+> Example: `KalaData.exe --c C:\Projects\MyApp C:\Archives\MyApp.kdat`
 
 ---
 
@@ -101,13 +101,13 @@ Target:
   - path must be a folder
   - folder must be writable
 
-> Example: KalaData.exe --dc C:\Archives\MyApp.kdat C:\Extracted\MyApp
+> Example: `KalaData.exe --dc C:\Archives\MyApp.kdat C:\Extracted\MyApp`
 
 ## Prerequisites for building from source
 
 ### On Windows
 
-> Read Windows_prerequisites.txt and use Windows_prerequisites.zip
+> Read `Windows_prerequisites.txt` and use `Windows_prerequisites.zip`
 
 ### On Linux
 
@@ -115,7 +115,7 @@ Target:
 
 ## How to build from source
 
-The compiled executable and its files will be placed to /release and /debug relative to the build stage
+The compiled executable and its files will be placed to `/release` and `/debug` in the root folder relative to the build stage
 
 ### On Windows
 
