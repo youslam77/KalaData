@@ -8,6 +8,8 @@
 #include <vector>
 #include <sstream>
 #include <string>
+#include <chrono>
+#include <iomanip>
 
 #include "compression/compress.hpp"
 #include "core/core.hpp"
@@ -31,6 +33,11 @@ using std::stringstream;
 using std::ostringstream;
 using std::string;
 using std::to_string;
+using std::chrono::high_resolution_clock;
+using std::chrono::duration;
+using std::chrono::seconds;
+using std::fixed;
+using std::setprecision;
 
 constexpr size_t WINDOW_SIZE = 4096; //4KB sliding window
 constexpr size_t LOOKAHEAD = 18;     //Max match length
@@ -71,6 +78,9 @@ namespace KalaData::Compression
 			"Starting to compress folder '" + origin + "' to archive '" + target + "'!\n",
 			MessageType::MESSAGETYPE_DEBUG);
 
+		//start clock timer
+		auto start = high_resolution_clock::now();
+
 		ofstream out(target, ios::binary);
 		if (!out.is_open())
 		{
@@ -96,6 +106,10 @@ namespace KalaData::Compression
 
 			return;
 		}
+
+		uint32_t compCount{};
+		uint32_t rawCount{};
+		uint32_t emptyCount{};
 
 		uint32_t fileCount = (uint32_t)files.size();
 		out.write((char*)&fileCount, sizeof(uint32_t));
@@ -130,17 +144,23 @@ namespace KalaData::Compression
 			const vector<uint8_t>& finalData = useCompressed ? compData : raw;
 			uint64_t finalSize = useCompressed ? compressedSize : originalSize;
 
-			if (!useCompressed
-				&& originalSize > 0)
+			if (!useCompressed)
 			{
-				stringstream ss{};
-				ss << "Skipping storing compressed data for relative path '" + relPath + "' and storing as raw "
-					<< "because compressed size '" + to_string(compressedSize) + "' is not smaller than original size '" + to_string(originalSize) + "'!\n";
+				if (originalSize == 0) emptyCount++;
+				else
+				{
+					rawCount++;
 
-				KalaDataCore::PrintMessage(
-					ss.str(),
-					MessageType::MESSAGETYPE_WARNING);
+					stringstream ss{};
+					ss << "Skipping storing compressed data for relative path '" + relPath + "' and storing as raw "
+						<< "because compressed size '" + to_string(compressedSize) + "' is not smaller than original size '" + to_string(originalSize) + "'!\n";
+
+					KalaDataCore::PrintMessage(
+						ss.str(),
+						MessageType::MESSAGETYPE_WARNING);
+				}
 			}
+			else compCount++;
 
 			//write metadata
 			out.write((char*)&pathLen, sizeof(uint32_t));
@@ -204,8 +224,21 @@ namespace KalaData::Compression
 			}
 		}
 
+		//end timer
+		auto end = high_resolution_clock::now();
+		auto durationSec = duration<double>(end - start).count();
+
+		stringstream finishComp{};
+		finishComp << "Finished compressing folder '" + origin + "' to archive '" + target + "'!\n"
+			<< "  - total files: " << to_string(fileCount)
+			<< "  - compressed: " << to_string(compCount)
+			<< "  - stored raw: " << to_string(rawCount)
+			<< "  - empty: " << to_string(emptyCount)
+			<< "  - duration: "
+			<< fixed << setprecision(2) << durationSec << " seconds\n";
+
 		KalaDataCore::PrintMessage(
-			"Finished compressing folder '" + origin + "' to archive '" + target + "'!\n",
+			finishComp.str(),
 			MessageType::MESSAGETYPE_SUCCESS);
 	}
 
@@ -217,6 +250,9 @@ namespace KalaData::Compression
 			"Starting to decompress archive '" + origin + "' to folder '" + target + "'!\n",
 			MessageType::MESSAGETYPE_DEBUG);
 
+		//start clock timer
+		auto start = high_resolution_clock::now();
+
 		ifstream in(origin, ios::binary);
 		if (!in.is_open())
 		{
@@ -226,6 +262,10 @@ namespace KalaData::Compression
 
 			return;
 		}
+
+		uint32_t compCount{};
+		uint32_t rawCount{};
+		uint32_t emptyCount{};
 
 		uint32_t fileCount{};
 		in.read((char*)&fileCount, sizeof(uint32_t));
@@ -289,6 +329,10 @@ namespace KalaData::Compression
 				return;
 			}
 
+			if (originalSize == 0) emptyCount++;
+			else if (compressedSize < originalSize) compCount++;
+			else rawCount++;
+
 			path outPath = path(target) / relPath;
 			create_directories(outPath.parent_path());
 
@@ -349,8 +393,21 @@ namespace KalaData::Compression
 			in.seekg((streamoff)compressedSize, ios::cur);
 		}
 
+		//end timer
+		auto end = high_resolution_clock::now();
+		auto durationSec = duration<double>(end - start).count();
+
+		stringstream finishDecomp{};
+		finishDecomp << "Finished decompressing archive '" + origin + "' to folder '" + target + "'!\n"
+			<< "  - total files: " << to_string(fileCount)
+			<< "  - decompressed: " << to_string(compCount)
+			<< "  - unpacked raw: " << to_string(rawCount)
+			<< "  - empty: " << to_string(emptyCount)
+			<< "  - duration: "
+			<< fixed << setprecision(2) << durationSec << " seconds\n";
+
 		KalaDataCore::PrintMessage(
-			"Finished decompressing archive '" + origin + "' to folder '" + target + "'!\n",
+			finishDecomp.str(),
 			MessageType::MESSAGETYPE_SUCCESS);
 	}
 }
