@@ -886,7 +886,7 @@ vector<uint8_t> HuffmanEncode(
 	{
 		auto ExtractTop = [&](auto& q)
 			{
-				auto node = move(const_cast<unique_ptr<HuffNode>&>(q.top()));
+				unique_ptr<HuffNode> node = move(const_cast<unique_ptr<HuffNode>&>(q.top()));
 				q.pop();
 				return node;
 			};
@@ -911,7 +911,19 @@ vector<uint8_t> HuffmanEncode(
 	}
 
 	size_t denseSize = 256 * sizeof(uint32_t);                //always 1024
-	size_t sparseSize = sizeof(uint16_t) + nonZero * (1 + 4); //count + (sym + freq)
+
+	constexpr size_t entrySize = 5;
+	if (nonZero > (SIZE_MAX - sizeof(uint16_t)) / entrySize)
+	{
+		ForceClose(
+			"Sparse size overflow in '" + origin + "'!\n",
+			ForceCloseType::TYPE_HUFFMAN_ENCODE);
+
+		return {};
+	}
+	size_t sparseSize = sizeof(uint16_t) + nonZero * entrySize; //count + (sym + freq)
+
+
 	bool useSparse = (sparseSize < denseSize);
 
 	vector<uint8_t> output{};
@@ -1110,7 +1122,7 @@ vector<uint8_t> HuffmanDecode(
 	{
 		auto ExtractTop = [&](auto& q)
 			{
-				auto node = move(const_cast<unique_ptr<HuffNode>&>(q.top()));
+				unique_ptr<HuffNode> node = move(const_cast<unique_ptr<HuffNode>&>(q.top()));
 				q.pop();
 				return node;
 			};
