@@ -261,7 +261,7 @@ namespace KalaData::Core
 
 		Compress::SetVerboseLoggingState(state);
 
-		string stateStr = state ? "true" : false;
+		string stateStr = state ? "true" : "false";
 
 		KalaDataCore::PrintMessage(
 			"Set compression verbose logging state to '" + stateStr + "'!\n");
