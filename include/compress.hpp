@@ -12,9 +12,7 @@ namespace KalaData
 	class Compress
 	{
 	public:
-		//Toggle showing detailed info:
-		//  - compressed relative file is equal or bigger than raw
-		//  - saved relative file is empty
+		//Toggle compression verbose messages on and off
 		static void SetVerboseLoggingState(bool newState) { isVerboseLoggingEnabled = newState; }
 		static bool IsVerboseLoggingEnabled() { return isVerboseLoggingEnabled; }
 

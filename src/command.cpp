@@ -196,7 +196,27 @@ namespace KalaData
 		else if (commandName == "tvb"
 			|| commandName == "--tvb")
 		{
-			Core::PrintMessage("Toggles compression verbose messages on and off\n");
+			stringstream ss{};
+
+			ss << "Toggles compression verbose messages on and off.\n"
+				<< "If true, then the following info is also displayed:\n\n"
+
+				<< "individual file logs:\n"
+				<< "  - compressed/decompressed file is empty\n"
+				<< "  - original file size is bigger than the "
+				<< "compressed file size so it will not be compressed/decompressed\n"
+				<< "  - stored file size is smaller or equal than the "
+				<< "compressed file size so it will be compressed/decompressed\n\n"
+				
+				<< "compression/decompression success log additional rows:\n"
+				<< "  - ratio\n"
+				<< "  - throughput\n"
+				<< "  - total files\n"
+				<< "  - compressed files\n"
+				<< "  - raw files\n"
+				<< "  - empty files\n";
+
+			Core::PrintMessage(ss.str());
 		}
 
 		else if (commandName == "c"

@@ -64,6 +64,28 @@ Note: KalaData does not support command piping or chaining. Commands must be giv
 
 ---
 
+## Verbose logging
+
+Enabling verbose messages shows additional data that would otherwise flood your console window.
+Use the `--tvb` command to toggle verbose messages on and off.
+
+If enabled, then the following info is also displayed:
+
+individual file logs:
+  - compressed/decompressed file is empty
+  - original file size is bigger than the compressed file size so it will not be compressed/decompressed
+  - stored file size is smaller or equal than the compressed file size so it will be compressed/decompressed
+
+compression/decompression success log additional rows:
+  - ratio
+  - throughput
+  - total files
+  - compressed files
+  - raw files
+  - empty files
+  
+---
+
 ## Compression
 
 The `--c` command takes in a folder which will be compressed into a `.kdat` file inside the target path parent folder.

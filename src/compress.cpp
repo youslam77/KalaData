@@ -384,6 +384,7 @@ namespace KalaData
 				<< "' to folder '" << path(target).filename().string() << "'!\n"
 				<< "  - origin archive size: " << archiveSize << " bytes\n"
 				<< "  - target folder size: " << folderSize << " bytes\n"
+				<< "  - throughput: " << fixed << setprecision(2) << mbps << " MB/s\n"
 				<< "  - duration: " << fixed << setprecision(2) << durationSec << " seconds\n";
 		}
 
@@ -689,6 +690,7 @@ namespace KalaData
 				<< "' to folder '" << path(target).filename().string() << "'!\n"
 				<< "  - origin archive size: " << archiveSize << " bytes\n"
 				<< "  - target folder size: " << folderSize << " bytes\n"
+				<< "  - throughput: " << fixed << setprecision(2) << mbps << " MB/s\n"
 				<< "  - duration: " << fixed << setprecision(2) << durationSec << " seconds\n";
 		}
 
