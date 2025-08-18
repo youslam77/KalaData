@@ -380,7 +380,7 @@ namespace KalaData
 		else
 		{
 			finishComp
-				<< "Finished decompressing archive '" << path(origin).filename().string()
+				<< "Finished compressing archive '" << path(origin).filename().string()
 				<< "' to folder '" << path(target).filename().string() << "'!\n"
 				<< "  - origin archive size: " << archiveSize << " bytes\n"
 				<< "  - target folder size: " << folderSize << " bytes\n"
