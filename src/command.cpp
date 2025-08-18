@@ -352,7 +352,7 @@ namespace KalaData
 	void Command::Command_SetCompressionMode(const string& mode)
 	{
 		auto it = presets.find(mode);
-		if (it != presets.end())
+		if (it == presets.end())
 		{
 			Core::PrintMessage(
 				"Compression mode '" + mode + "' does not exist!\n",
