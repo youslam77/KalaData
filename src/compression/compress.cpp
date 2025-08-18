@@ -594,8 +594,13 @@ void DecompressBuffer(
 
 			if (offset > buffer.size())
 			{
+				stringstream ss{};
+
+				ss << "Offset size '" + to_string(offset) + "'is bigger than buffer size "
+					<< to_string(buffer.size()) << "' in archive '" + target + "' (corruption suspected)!\n";
+
 				ForceClose(
-					"Invalid offset in archive '" + target + "' (corruption suspected)!\n",
+					ss.str(),
 					false);
 
 				return;
