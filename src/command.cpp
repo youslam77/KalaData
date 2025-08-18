@@ -14,10 +14,9 @@
 #include "command.hpp"
 #include "compress.hpp"
 
-using std::stringstream;
+using std::ostringstream;
 using std::string;
 using std::to_string;
-using std::stringstream;
 using std::filesystem::path;
 using std::filesystem::exists;
 using std::filesystem::remove;
@@ -149,7 +148,8 @@ namespace KalaData
 				command.erase(pos, target.length());
 			}
 
-			stringstream ss{};
+			ostringstream ss{};
+
 			ss << "Unsupported command '" + command + "'! Type --help to list all commands.\n";
 
 			Core::PrintMessage(
@@ -166,7 +166,7 @@ namespace KalaData
 
 	void Command::Command_About()
 	{
-		stringstream ss{};
+		ostringstream ss{};
 
 		ss << "KalaData is a custom compression and decompression tool written in C++20, "
 			<< "built entirely from scratch without external dependencies.\n"
@@ -182,18 +182,21 @@ namespace KalaData
 
 	void Command::Command_Help()
 	{
-		stringstream ss{};
+		ostringstream ss{};
+
 		ss << "====================\n\n"
 
 			<< "Notes:\n"
 			<< "  - all paths are absolute and KalaData does not take relative paths.\n"
-			<< "  - if you use '--help command' you must put a real command there, for example '--help c'\n\n"
+			<< "  - use the '-help command' command to get more info about a specific command, like '--help c'.\n"
+			<< "  - the command '--sm mode' expects a valid mode, like '--sm balanced'\n\n"
 
 			<< "Commands:\n"
 			<< "  --v\n"
 			<< "  --about\n"
 			<< "  --help\n"
 			<< "  --help command\n"
+			<< "  --sm mode\n"
 			<< "  --tvb\n"
 			<< "  --c\n"
 			<< "  --dc\n"
@@ -224,10 +227,48 @@ namespace KalaData
 			Core::PrintMessage("Lists all commands\n");
 		}
 
+		else if (commandName == "sm"
+			|| commandName == "--sm")
+		{
+			ostringstream ss{};
+
+			ss << "Sets the compression/decompression mode.\n"
+				<< "Note: All modes share the same min_match value '3'.\n\n"
+
+				<< "Available modes:\n"
+
+				<< "- fastest\n"
+				<< "  - best for temporary files\n"
+				<< "  - window size: " << WINDOW_SIZE_FASTEST << "\n"
+				<< "  - lookahead: " << LOOKAHEAD_FASTEST << "\n\n"
+				
+				<< "- fast\n"
+				<< "  - best for quick backups\n"
+				<< "  - window size: " << WINDOW_SIZE_FAST<< "\n"
+				<< "  - lookahead: " << LOOKAHEAD_FAST << "\n\n"
+				
+				<< "- balanced\n"
+				<< "  - best for general use\n"
+				<< "  - window size: " << WINDOW_SIZE_BALANCED << "\n"
+				<< "  - lookahead: " << LOOKAHEAD_BALANCED << "\n\n"
+				
+				<< "- slow\n"
+				<< "  - best for long term storage\n"
+				<< "  - window size: " << WINDOW_SIZE_SLOW << "\n"
+				<< "  - lookahead: " << LOOKAHEAD_SLOW << "\n\n"
+				
+				<< "- archive\n"
+				<< "  - best for maximum compression\n"
+				<< "  - window size: " << WINDOW_SIZE_ARCHIVE << "\n"
+				<< "  - lookahead: " << LOOKAHEAD_ARCHIVE << "\n";
+
+			Core::PrintMessage(ss.str());
+		}
+
 		else if (commandName == "tvb"
 			|| commandName == "--tvb")
 		{
-			stringstream ss{};
+			ostringstream ss{};
 
 			ss << "Toggles compression verbose messages on and off.\n"
 				<< "If true, then the following info is also displayed:\n\n"
@@ -254,7 +295,7 @@ namespace KalaData
 		else if (commandName == "c"
 			|| commandName == "--c")
 		{
-			stringstream ss{};
+			ostringstream ss{};
 
 			ss << "Takes in a folder which will be compressed into a '.kdat' file inside the target path parent folder.\n\n"
 				<< "Requirements and restrictions:\n\n"
@@ -276,7 +317,7 @@ namespace KalaData
 		else if (commandName == "dc"
 			|| commandName == "--dc")
 		{
-			stringstream ss{};
+			ostringstream ss{};
 
 			ss << "Takes in a compressed '.kdat' file path which will be decompressed inside the target folder.\n\n"
 				<< "Requirements and restrictions:\n\n"
@@ -520,7 +561,8 @@ bool CanWriteToFolder(const string& folderPath)
 
 string ConvertSizeToString(uint64_t size)
 {
-	stringstream ss{};
+	ostringstream ss{};
+
 	ss << fixed
 		<< setprecision(2)
 		<< static_cast<double>(size) / (1024ull * 1024 * 1024)

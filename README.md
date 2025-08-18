@@ -49,18 +49,36 @@ Note: KalaData does not support command piping or chaining. Commands must be giv
 
 ### Notes:
   - all paths are absolute and KalaData does not take relative paths
-  - if you use `--help command` you must put a real command there, for example `--help c`
+  - use the `-help command` command to get more info about a specific command, like `--help c`
+  - the command `--sm mode` expects a valid mode, like `--sm balanced`
 
 | Command          | Description                                            |
 |------------------|--------------------------------------------------------|
 | --v              | Print KalaData version                                 |
 | --about          | Prints the KalaData description                        |
 | --help           | List all commands                                      |
-| --help *command* | Get info about the specified command                   |
+| --help `command` | Get info about the specified command                   |
+| --sm `mode`      | Set compression/decompression mode                     |
 | --tvb            | Toggle verbosity (prints detailed logs when enabled)   |
 | --c              | Compress origin folder into target archive file path   |
 | --dc             | Decompress origin archive file into target folder path |
 | --exit           | Quit KalaData                                          |
+
+---
+
+## Available compression modes
+
+Note: All modes share the same min_match value `3`.
+
+### Available modes
+
+| Mode     | Best for            | Window size | Lookahead |
+|----------|---------------------|-------------|-----------|
+| fastest  | Temporary files     | 4 KB        | 18        |
+| fast     | Quick backups       | 32 KB       | 32        |
+| balanced | General use         | 256 KB      | 64        |
+| slow     | Long-term storage   | 1 MB        | 128       |
+| archive  | Maximum compression | 8 MB        | 255       |
 
 ---
 
@@ -92,7 +110,7 @@ compression/decompression success log additional rows:
 ### Header data
 | Offset | Size   | Field      | Description                        |
 |--------|--------|------------|------------------------------------|
-| 0x00   | 6 B    | magicVer   | Magic string + version ("KDAT01")  |
+| 0x00   | 6 B    | magicVer   | Magic string + version (KDAT01)  |
 | 0x06   | 4 B    | fileCount  | Number of file entries (uint32)    |
 
 ### Metadata + file data
