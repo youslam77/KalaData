@@ -109,5 +109,3 @@ Target:
 ## On Linux
 
 > Not ready, coming soon
-
----
