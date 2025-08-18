@@ -303,14 +303,6 @@ namespace KalaData
 					return;
 				}
 			}
-			else
-			{
-				if (isVerboseLoggingEnabled)
-				{
-					Core::PrintMessage(
-						"File '" + relPath + "' is empty, storing as 0-byte entry in archive.");
-				}
-			}
 		}
 
 		//finished writing
