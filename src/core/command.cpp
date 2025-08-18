@@ -77,6 +77,12 @@ namespace KalaData::Core
 			return;
 		}
 
+		else if (parameters.size() == 2
+			&& parameters[1] == "--tvb")
+		{
+			Command_ToggleCompressionVerbosity();
+		}
+
 		else if (parameters.size() == 4
 			&& (parameters[1] == "--c"
 			|| parameters[1] == "--compress"))
@@ -189,6 +195,12 @@ namespace KalaData::Core
 			KalaDataCore::PrintMessage("Lists all commands\n");
 		}
 
+		else if (commandName == "tvb"
+			|| commandName == "--tvb")
+		{
+			KalaDataCore::PrintMessage("Toggles compression verbose messages on and off\n");
+		}
+
 		else if (commandName == "compress"
 			|| commandName == "--compress"
 			|| commandName == "c"
@@ -240,6 +252,19 @@ namespace KalaData::Core
 				"Cannot get info about command '" + commandName + "' because it does not exist! Type '--help' to list all commands\n",
 				MessageType::MESSAGETYPE_ERROR);
 		}
+	}
+
+	void Command::Command_ToggleCompressionVerbosity()
+	{
+		bool state = Compress::IsVerboseLoggingEnabled();
+		state = !state;
+
+		Compress::SetVerboseLoggingState(state);
+
+		string stateStr = state ? "true" : false;
+
+		KalaDataCore::PrintMessage(
+			"Set compression verbose logging state to '" + stateStr + "'!\n");
 	}
 
 	void Command::Command_Compress(

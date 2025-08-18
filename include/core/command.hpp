@@ -29,6 +29,9 @@ namespace KalaData::Core
 		//Print info about selected command in console
 		static void Command_Help_Command(const string& commandName);
 
+		//Toggles compression verbose messages on and off
+		static void Command_ToggleCompressionVerbosity();
+
 		//Compression pre-checks
 		static void Command_Compress(
 			const string& origin,
