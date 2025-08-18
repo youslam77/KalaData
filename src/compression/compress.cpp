@@ -65,7 +65,7 @@ static vector<uint8_t> CompressBuffer(
 static void DecompressBuffer(
 	ifstream& in,
 	vector<uint8_t> &out,
-	size_t compressedSize,
+	size_t storedSize,
 	size_t originalSize,
 	const string& target);
 
@@ -243,12 +243,10 @@ namespace KalaData::Compression
 			if (is_regular_file(p)) originalSize += file_size(p);
 		}
 
-		string finalSize = to_string(file_size(target));
-
 		stringstream finishComp{};
 		finishComp << "Finished compressing folder '" + origin + "' to archive '" + target + "'!\n"
 			<< "  - origin folder size: " << to_string(originalSize) << " bytes\n"
-			<< "  - target archive size: " << finalSize << " bytes\n"
+			<< "  - target archive size: " << to_string(file_size(target)) << " bytes\n"
 			<< "  - total files: " << to_string(fileCount) << "\n"
 			<< "  - compressed: " << to_string(compCount) << "\n"
 			<< "  - stored raw: " << to_string(rawCount) << "\n"
@@ -329,7 +327,7 @@ namespace KalaData::Compression
 			}
 
 			uint64_t originalSize{};
-			uint64_t compressedSize{};
+			uint64_t storedSize{};
 			if (!in.read((char*)&originalSize, sizeof(uint64_t)))
 			{
 				ForceClose(
@@ -339,7 +337,7 @@ namespace KalaData::Compression
 				return;
 			}
 
-			if (!in.read((char*)&compressedSize, sizeof(uint64_t)))
+			if (!in.read((char*)&storedSize, sizeof(uint64_t)))
 			{
 				ForceClose(
 					"Failed to read compressed size for file '" + relPath + "' from archive '" + origin + "'!\n",
@@ -349,7 +347,7 @@ namespace KalaData::Compression
 			}
 
 			if (originalSize == 0) emptyCount++;
-			else if (compressedSize < originalSize) compCount++;
+			else if (storedSize < originalSize) compCount++;
 			else rawCount++;
 
 			path outPath = path(target) / relPath;
@@ -370,13 +368,13 @@ namespace KalaData::Compression
 
 			//prepare output buffer
 			vector<uint8_t> data{};
-			auto compressedStart = in.tellg();
+			auto storedStart = in.tellg();
 
 			//decompress
 			DecompressBuffer(
 				in,
 				data,
-				compressedSize,
+				storedSize,
 				originalSize,
 				origin);
 
@@ -409,15 +407,13 @@ namespace KalaData::Compression
 			outFile.close();
 
 			//advance past compressed chunk in archive
-			in.seekg(compressedStart);
-			in.seekg((streamoff)compressedSize, ios::cur);
+			in.seekg(storedStart);
+			in.seekg((streamoff)storedSize, ios::cur);
 		}
 
 		//end timer
 		auto end = high_resolution_clock::now();
 		auto durationSec = duration<double>(end - start).count();
-
-		string originalSize = to_string(file_size(origin));
 
 		uint64_t finalSize{};
 		for (auto& p : recursive_directory_iterator(target))
@@ -427,7 +423,7 @@ namespace KalaData::Compression
 
 		stringstream finishDecomp{};
 		finishDecomp << "Finished decompressing archive '" + origin + "' to folder '" + target + "'!\n"
-			<< "  - origin archive size: " << originalSize << " bytes\n"
+			<< "  - origin archive size: " << to_string(file_size(origin)) << " bytes\n"
 			<< "  - target folder size: " << to_string(finalSize) << " bytes\n"
 			<< "  - total files: " << to_string(fileCount) << "\n"
 			<< "  - decompressed: " << to_string(compCount) << "\n"
@@ -544,7 +540,7 @@ vector<uint8_t> CompressBuffer(
 void DecompressBuffer(
 	ifstream& in,
 	vector<uint8_t>& out,
-	size_t compressedSize,
+	size_t storedSize,
 	size_t originalSize,
 	const string& target)
 {
@@ -553,7 +549,7 @@ void DecompressBuffer(
 
 	size_t bytesRead = 0;
 
-	while (bytesRead < compressedSize)
+	while (bytesRead < storedSize)
 	{
 		uint8_t flag{};
 		if (!in.read((char*)&flag, 1))
