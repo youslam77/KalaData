@@ -209,7 +209,8 @@ namespace KalaData
 				<< "compressed file size so it will be compressed/decompressed\n\n"
 				
 				<< "compression/decompression success log additional rows:\n"
-				<< "  - ratio\n"
+				<< "  - compression/expansion ratio\n"
+				<< "  - compression/expansion factor\n"
 				<< "  - throughput\n"
 				<< "  - total files\n"
 				<< "  - compressed files\n"

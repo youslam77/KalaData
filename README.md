@@ -77,7 +77,8 @@ individual file logs:
   - stored file size is smaller or equal than the compressed file size so it will be compressed/decompressed
 
 compression/decompression success log additional rows:
-  - ratio
+  - compression/expansion ratio
+  - compression/expansion factor
   - throughput
   - total files
   - compressed files

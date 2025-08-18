@@ -323,6 +323,7 @@ namespace KalaData
 
 		auto ratio = (static_cast<double>(archiveSize) / folderSize) * 100.0;
 		auto factor = static_cast<double>(folderSize) / archiveSize;
+		auto saved = 100.0 - ratio;
 
 		ostringstream finishComp{};
 		if (isVerboseLoggingEnabled)
@@ -331,8 +332,9 @@ namespace KalaData
 				<< "Finished compressing folder '" << origin << "' to archive '" << target << "'!\n"
 				<< "  - origin folder size: " << folderSize << " bytes\n"
 				<< "  - target archive size: " << archiveSize << " bytes\n"
-				<< "  - compression ratio: " << fixed << setprecision(2) << ratio << "% ("
-				<< fixed << setprecision(2) << factor << "x smaller)\n"
+				<< "  - compression ratio: " << fixed << setprecision(2) << ratio << "%\n"
+				<< "  - space saved: " << fixed << setprecision(2) << saved << "%\n"
+				<< "  - compression factor: " << fixed << setprecision(2) << factor << "x\n"
 				<< "  - throughput: " << fixed << setprecision(2) << mbps << " MB/s\n"
 				<< "  - total files: " << fileCount << "\n"
 				<< "  - compressed: " << compCount << "\n"
@@ -347,6 +349,7 @@ namespace KalaData
 				<< "' to archive '" << path(target).filename().string() << "'!\n"
 				<< "  - origin folder size: " << folderSize << " bytes\n"
 				<< "  - target archive size: " << archiveSize << " bytes\n"
+				<< "  - space saved: " << fixed << setprecision(2) << saved << "%\n"
 				<< "  - throughput: " << fixed << setprecision(2) << mbps << " MB/s\n"
 				<< "  - duration: " << fixed << setprecision(2) << durationSec << " seconds\n";
 		}
@@ -639,6 +642,7 @@ namespace KalaData
 
 		auto ratio = (static_cast<double>(folderSize) / archiveSize) * 100.0;
 		auto factor = static_cast<double>(folderSize) / archiveSize;
+		auto saved = 100.0 - ratio;
 
 		ostringstream finishDecomp{};
 
@@ -648,8 +652,8 @@ namespace KalaData
 				<< "Finished decompressing archive '" << origin << "' to folder '" << target << "'!\n"
 				<< "  - origin archive size: " << archiveSize << " bytes\n"
 				<< "  - target folder size: " << folderSize << " bytes\n"
-				<< "  - expansion ratio: " << fixed << setprecision(2) << ratio << "% ("
-				<< fixed << setprecision(2) << factor << "x larger)\n"
+				<< "  - expansion ratio: " << fixed << setprecision(2) << ratio << "%\n"
+				<< "  - expansion factor: " << fixed << setprecision(2) << factor << "x\n"
 				<< "  - throughput: " << fixed << setprecision(2) << mbps << " MB/s\n"
 				<< "  - total files: " << fileCount << "\n"
 				<< "  - decompressed: " << compCount << "\n"
