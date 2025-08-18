@@ -9,11 +9,11 @@
 #include <vector>
 #include <iostream>
 
-#include "core/command.hpp"
-#include "core/core.hpp"
+#include "command.hpp"
+#include "core.hpp"
 
-using KalaData::Core::Command;
-using KalaData::Core::KalaDataCore;
+using KalaData::Core;
+using KalaData::Command;
 
 using std::string;
 using std::cout;
@@ -50,5 +50,5 @@ int main(int argc, char* argv[])
 		Command::HandleCommand(commands);
 	}
 
-	KalaDataCore::Update();
+	Core::Update();
 }

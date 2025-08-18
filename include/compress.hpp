@@ -5,7 +5,7 @@
 
 #include <string>
 
-namespace KalaData::Compression
+namespace KalaData
 {
 	using std::string;
 

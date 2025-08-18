@@ -9,11 +9,9 @@
 #include <iomanip>
 #include <fstream>
 
-#include "core/core.hpp"
-#include "core/command.hpp"
-#include "compression/compress.hpp"
-
-using KalaData::Compression::Compress;
+#include "core.hpp"
+#include "command.hpp"
+#include "compress.hpp"
 
 using std::stringstream;
 using std::string;
@@ -41,7 +39,7 @@ static string ConvertSizeToString(uint64_t size);
 //5GB max file size
 constexpr uint64_t maxFolderSize = 5ull * 1024 * 1024 * 1024;
 
-namespace KalaData::Core
+namespace KalaData
 {
 	void Command::HandleCommand(vector<string> parameters)
 	{
@@ -123,7 +121,7 @@ namespace KalaData::Core
 			stringstream ss{};
 			ss << "Unsupported command '" + command + "'! Type --help to list all commands.\n";
 
-			KalaDataCore::PrintMessage(
+			Core::PrintMessage(
 				ss.str(),
 				MessageType::MESSAGETYPE_ERROR);
 			return;
@@ -132,7 +130,7 @@ namespace KalaData::Core
 
 	void Command::Command_Version()
 	{
-		KalaDataCore::PrintMessage(KALADATA_VERSION "\n");
+		Core::PrintMessage(KALADATA_VERSION "\n");
 	}
 
 	void Command::Command_About()
@@ -148,7 +146,7 @@ namespace KalaData::Core
 			<< "KalaData was created by and is maintained by KalaKit, an organization owned by Lost Empire Entertainment.\n"
 			<< "Official repository: 'https://github.com/KalaKit/KalaData'\n";
 
-		KalaDataCore::PrintMessage(ss.str());
+		Core::PrintMessage(ss.str());
 	}
 
 	void Command::Command_Help()
@@ -172,7 +170,7 @@ namespace KalaData::Core
 
 			<< "====================\n";
 
-		KalaDataCore::PrintMessage(ss.str());
+		Core::PrintMessage(ss.str());
 	}
 
 	void Command::Command_Help_Command(const string& commandName)
@@ -180,25 +178,25 @@ namespace KalaData::Core
 		if (commandName == "v"
 			|| commandName == "--v")
 		{
-			KalaDataCore::PrintMessage("Prints the KalaData version\n");
+			Core::PrintMessage("Prints the KalaData version\n");
 		}
 
 		else if (commandName == "about"
 			|| commandName == "--about")
 		{
-			KalaDataCore::PrintMessage("Prints the KalaData description\n");
+			Core::PrintMessage("Prints the KalaData description\n");
 		}
 
 		else if (commandName == "help"
 			|| commandName == "--help")
 		{
-			KalaDataCore::PrintMessage("Lists all commands\n");
+			Core::PrintMessage("Lists all commands\n");
 		}
 
 		else if (commandName == "tvb"
 			|| commandName == "--tvb")
 		{
-			KalaDataCore::PrintMessage("Toggles compression verbose messages on and off\n");
+			Core::PrintMessage("Toggles compression verbose messages on and off\n");
 		}
 
 		else if (commandName == "c"
@@ -220,7 +218,7 @@ namespace KalaData::Core
 				<< "  - path must have the '.kdat' extension\n"
 				<< "  - path parent folder must be writable\n";
 
-			KalaDataCore::PrintMessage(ss.str());
+			Core::PrintMessage(ss.str());
 		}
 
 		else if (commandName == "dc"
@@ -241,18 +239,18 @@ namespace KalaData::Core
 				<< "  - path must be a folder\n"
 				<< "  - folder must be writable\n";
 
-			KalaDataCore::PrintMessage(ss.str());
+			Core::PrintMessage(ss.str());
 		}
 
 		else if (commandName == "exit"
 			|| commandName == "--exit")
 		{
-			KalaDataCore::PrintMessage("Shuts down KalaData\n");
+			Core::PrintMessage("Shuts down KalaData\n");
 		}
 
 		else
 		{
-			KalaDataCore::PrintMessage(
+			Core::PrintMessage(
 				"Cannot get info about command '" + commandName + "' because it does not exist! Type '--help' to list all commands\n",
 				MessageType::MESSAGETYPE_ERROR);
 		}
@@ -267,7 +265,7 @@ namespace KalaData::Core
 
 		string stateStr = state ? "true" : "false";
 
-		KalaDataCore::PrintMessage(
+		Core::PrintMessage(
 			"Set compression verbose logging state to '" + stateStr + "'!\n");
 	}
 
@@ -277,7 +275,7 @@ namespace KalaData::Core
 	{
 		if (!exists(origin))
 		{
-			KalaDataCore::PrintMessage(
+			Core::PrintMessage(
 				"Origin path '" + origin + "' does not exist!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
@@ -286,7 +284,7 @@ namespace KalaData::Core
 
 		if (!is_directory(origin))
 		{
-			KalaDataCore::PrintMessage(
+			Core::PrintMessage(
 				"Origin '" + origin + "' must be a directory!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
@@ -295,7 +293,7 @@ namespace KalaData::Core
 
 		if (is_empty(origin))
 		{
-			KalaDataCore::PrintMessage(
+			Core::PrintMessage(
 				"Origin '" + origin + "' must not be an empty folder!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
@@ -307,7 +305,7 @@ namespace KalaData::Core
 		{
 			string convertedOriginSize = ConvertSizeToString(originSize);
 
-			KalaDataCore::PrintMessage(
+			Core::PrintMessage(
 				"Origin '" + origin + "' size '" + convertedOriginSize + "' exceeds max allowed size '5.00GB'!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
@@ -316,7 +314,7 @@ namespace KalaData::Core
 
 		if (exists(target))
 		{
-			KalaDataCore::PrintMessage(
+			Core::PrintMessage(
 				"Target '" + target + "' already exists!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
@@ -325,7 +323,7 @@ namespace KalaData::Core
 
 		if (path(target).extension().string() != ".kdat")
 		{
-			KalaDataCore::PrintMessage(
+			Core::PrintMessage(
 				"Target path '" + target + "' must have the '.kdat' extension!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
@@ -335,7 +333,7 @@ namespace KalaData::Core
 		string targetParentFolder = path(target).parent_path().string();
 		if (!CanWriteToFolder(targetParentFolder))
 		{
-			KalaDataCore::PrintMessage(
+			Core::PrintMessage(
 				"Insufficient permissions to write to target parent folder '" + targetParentFolder + "'!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
@@ -351,7 +349,7 @@ namespace KalaData::Core
 	{
 		if (!exists(origin))
 		{
-			KalaDataCore::PrintMessage(
+			Core::PrintMessage(
 				"Origin path '" + origin + "' does not exist!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
@@ -360,7 +358,7 @@ namespace KalaData::Core
 
 		if (!is_regular_file(origin))
 		{
-			KalaDataCore::PrintMessage(
+			Core::PrintMessage(
 				"Origin '" + origin + "' must be a regular file!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
@@ -369,7 +367,7 @@ namespace KalaData::Core
 
 		if (path(origin).extension().string() != ".kdat")
 		{
-			KalaDataCore::PrintMessage(
+			Core::PrintMessage(
 				"Origin '" + origin + "' must have the '.kdat' extension!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
@@ -378,7 +376,7 @@ namespace KalaData::Core
 
 		if (!exists(target))
 		{
-			KalaDataCore::PrintMessage(
+			Core::PrintMessage(
 				"Target folder '" + target + "' does not exist!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
@@ -387,7 +385,7 @@ namespace KalaData::Core
 
 		if (!is_directory(target))
 		{
-			KalaDataCore::PrintMessage(
+			Core::PrintMessage(
 				"Target '" + target + "' must be a folder!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
@@ -397,7 +395,7 @@ namespace KalaData::Core
 		string targetParentFolder = path(target).parent_path().string();
 		if (!CanWriteToFolder(targetParentFolder))
 		{
-			KalaDataCore::PrintMessage(
+			Core::PrintMessage(
 				"Insufficient permissions to write to target parent folder '" + targetParentFolder + "'!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
@@ -409,7 +407,7 @@ namespace KalaData::Core
 
 	void Command::Command_Exit()
 	{
-		KalaDataCore::Shutdown();
+		Core::Shutdown();
 	}
 }
 

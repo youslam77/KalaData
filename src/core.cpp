@@ -14,8 +14,8 @@
 #include <iterator>
 #include <vector>
 
-#include "core/core.hpp"
-#include "core/command.hpp"
+#include "core.hpp"
+#include "command.hpp"
 
 using std::cout;
 using std::clog;
@@ -27,9 +27,9 @@ using std::vector;
 
 static bool isRunning = false;
 
-namespace KalaData::Core
+namespace KalaData
 {
-	void KalaDataCore::Update()
+	void Core::Update()
 	{
 		isRunning = true;
 
@@ -52,7 +52,7 @@ namespace KalaData::Core
 		}
 	}
 
-	void KalaDataCore::PrintMessage(
+	void Core::PrintMessage(
 		const string& message,
 		MessageType type)
 	{
@@ -78,7 +78,7 @@ namespace KalaData::Core
 		}
 	}
 
-	void KalaDataCore::ForceClose(const string& title, const string& message)
+	void Core::ForceClose(const string& title, const string& message)
 	{
 		PrintMessage(
 			message,
@@ -102,7 +102,7 @@ namespace KalaData::Core
 		}
 	}
 
-	void KalaDataCore::Shutdown(ShutdownState state)
+	void Core::Shutdown(ShutdownState state)
 	{
 		if (state == ShutdownState::SHUTDOWN_CRITICAL)
 		{

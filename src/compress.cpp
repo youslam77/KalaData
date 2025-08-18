@@ -14,11 +14,11 @@
 #include <map>
 #include <memory>
 
-#include "compression/compress.hpp"
-#include "core/core.hpp"
+#include "compress.hpp"
+#include "core.hpp"
 
-using KalaData::Core::KalaDataCore;
-using KalaData::Core::MessageType;
+using KalaData::Core;
+using KalaData::MessageType;
 
 using std::filesystem::path;
 using std::filesystem::create_directories;
@@ -140,7 +140,7 @@ static vector<uint8_t> HuffmanDecode(
 	size_t storedSize,
 	const string& origin);
 
-namespace KalaData::Compression
+namespace KalaData
 {
 	void Compress::CompressToArchive(
 		const string& origin,
@@ -148,7 +148,7 @@ namespace KalaData::Compression
 	{
 		if (isVerboseLoggingEnabled)
 		{
-			KalaDataCore::PrintMessage(
+			Core::PrintMessage(
 				"Starting to compress folder '" + origin + "' to archive '" + target + "'!\n");
 		}
 
@@ -231,7 +231,7 @@ namespace KalaData::Compression
 
 					if (isVerboseLoggingEnabled)
 					{
-						KalaDataCore::PrintMessage(
+						Core::PrintMessage(
 							"'" + path(relPath).filename().string() + "' is empty. Skipping compression, storing as raw.");
 					}
 				}
@@ -248,7 +248,7 @@ namespace KalaData::Compression
 							<< "is not smaller than original size '" + to_string(originalSize)
 							<< " bytes'. Skipping compression, storing as raw.";
 
-						KalaDataCore::PrintMessage(ss.str());
+						Core::PrintMessage(ss.str());
 					}
 				}
 			}
@@ -264,7 +264,7 @@ namespace KalaData::Compression
 						<< "' compressed size '" + compressedSize << " bytes' "
 						<< "is smaller than original size '" + to_string(originalSize) + " bytes'. Storing as compressed.";
 
-					KalaDataCore::PrintMessage(ss.str());
+					Core::PrintMessage(ss.str());
 				}
 			}
 
@@ -336,7 +336,7 @@ namespace KalaData::Compression
 			{
 				if (isVerboseLoggingEnabled)
 				{
-					KalaDataCore::PrintMessage(
+					Core::PrintMessage(
 						"File '" + relPath + "' is empty, storing as 0-byte entry in archive.\n");
 				}
 			}
@@ -387,7 +387,7 @@ namespace KalaData::Compression
 				<< "  - duration: " << fixed << setprecision(2) << durationSec << " seconds\n";
 		}
 
-		KalaDataCore::PrintMessage(
+		Core::PrintMessage(
 			finishComp.str(),
 			MessageType::MESSAGETYPE_SUCCESS);
 	}
@@ -398,7 +398,7 @@ namespace KalaData::Compression
 	{
 		if (isVerboseLoggingEnabled)
 		{
-			KalaDataCore::PrintMessage(
+			Core::PrintMessage(
 				"Starting to decompress archive '" + origin + "' to folder '" + target + "'!\n");
 		}
 
@@ -565,7 +565,7 @@ namespace KalaData::Compression
 				if (storedSize == 0
 					&& isVerboseLoggingEnabled)
 				{
-					KalaDataCore::PrintMessage(
+					Core::PrintMessage(
 						"'" + path(relPath).filename().string() + "' is empty. Skipping decompression, restoring as raw.");
 				}
 				else
@@ -579,7 +579,7 @@ namespace KalaData::Compression
 							<< "is not smaller than original size '" + to_string(originalSize)
 							<< " bytes'. Skipping decompression, restoring as raw.";
 
-						KalaDataCore::PrintMessage(ss.str());
+						Core::PrintMessage(ss.str());
 					}
 
 					data.resize(static_cast<size_t>(storedSize));
@@ -604,7 +604,7 @@ namespace KalaData::Compression
 						<< "' compressed size '" + storedSize << " bytes' "
 						<< "is smaller than original size '" + to_string(originalSize) + " bytes'. Restoring as decompressed.";
 
-					KalaDataCore::PrintMessage(ss.str());
+					Core::PrintMessage(ss.str());
 				}
 
 				vector<uint8_t> lzssStream = HuffmanDecode(
@@ -692,7 +692,7 @@ namespace KalaData::Compression
 				<< "  - duration: " << fixed << setprecision(2) << durationSec << " seconds\n";
 		}
 
-		KalaDataCore::PrintMessage(
+		Core::PrintMessage(
 			finishDecomp.str(),
 			MessageType::MESSAGETYPE_SUCCESS);
 	}
@@ -726,7 +726,7 @@ void ForceClose(
 		break;
 	}
 
-	KalaDataCore::ForceClose(title, message);
+	Core::ForceClose(title, message);
 }
 
 vector<uint8_t> CompressBuffer(

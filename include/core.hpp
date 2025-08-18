@@ -5,7 +5,7 @@
 
 #include <string>
 
-namespace KalaData::Core
+namespace KalaData
 {
 	using std::string;
 
@@ -24,7 +24,7 @@ namespace KalaData::Core
 		MESSAGETYPE_SUCCESS
 	};
 
-	class KalaDataCore
+	class Core
 	{
 	public:
 		//Runtime loop of KalaData
