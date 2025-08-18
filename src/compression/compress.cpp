@@ -230,6 +230,9 @@ namespace KalaData::Compression
 			}
 		}
 
+		//finished writing
+		out.close();
+
 		//end timer
 		auto end = high_resolution_clock::now();
 		auto durationSec = duration<double>(end - start).count();
@@ -238,7 +241,7 @@ namespace KalaData::Compression
 
 		stringstream finishComp{};
 		finishComp << "Finished compressing folder '" + origin + "' to archive '" + target + "'!\n"
-			<< "  - compressed size: " << finalSize << "\n"
+			<< "  - compressed size: " << finalSize << " bytes\n"
 			<< "  - total files: " << to_string(fileCount) << "\n"
 			<< "  - compressed: " << to_string(compCount) << "\n"
 			<< "  - stored raw: " << to_string(rawCount) << "\n"
@@ -395,6 +398,7 @@ namespace KalaData::Compression
 				return;
 			}
 
+			//done writing
 			outFile.close();
 
 			//advance past compressed chunk in archive
@@ -414,7 +418,7 @@ namespace KalaData::Compression
 
 		stringstream finishDecomp{};
 		finishDecomp << "Finished decompressing archive '" + origin + "' to folder '" + target + "'!\n"
-			<< "  - uncompressed size: " << to_string(finalSize) << "\n"
+			<< "  - uncompressed size: " << to_string(finalSize) << " bytes\n"
 			<< "  - total files: " << to_string(fileCount) << "\n"
 			<< "  - decompressed: " << to_string(compCount) << "\n"
 			<< "  - unpacked raw: " << to_string(rawCount) << "\n"
