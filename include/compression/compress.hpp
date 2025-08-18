@@ -12,6 +12,12 @@ namespace KalaData::Compression
 	class Compress
 	{
 	public:
+		//Toggle showing detailed info:
+		//  - compressed relative file is equal or bigger than raw
+		//  - saved relative file is empty
+		static void SetVerboseLoggingState(bool newState) { isVerboseLoggingEnabled = newState; }
+		static bool IsVerboseLoggingEnabled() { return isVerboseLoggingEnabled; }
+
 		//Compresses selected folder straight to .kdat archive inside target folder,
 		//skips all safety checks that are handled in the Command class for the Compress command
 		static void CompressToArchive(
@@ -23,5 +29,7 @@ namespace KalaData::Compression
 		static void DecompressToFolder(
 			const string& origin,
 			const string& target);
+	private:
+		static inline bool isVerboseLoggingEnabled = false;
 	};
 }

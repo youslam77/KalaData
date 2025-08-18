@@ -151,13 +151,16 @@ namespace KalaData::Compression
 				{
 					rawCount++;
 
-					stringstream ss{};
-					ss << "Skipping storing compressed data for relative path '" + relPath + "' and storing as raw "
-						<< "because compressed size '" + to_string(compressedSize) + "' is not smaller than original size '" + to_string(originalSize) + "'!\n";
+					if (isVerboseLoggingEnabled)
+					{
+						stringstream ss{};
+						ss << "Skipping storing compressed data for relative path '" 
+							<< relPath << "' and storing as raw "
+							<< "because compressed size '" + to_string(compressedSize) << "' "
+							<< "is not smaller than original size '" + to_string(originalSize) + "'!\n";
 
-					KalaDataCore::PrintMessage(
-						ss.str(),
-						MessageType::MESSAGETYPE_WARNING);
+						KalaDataCore::PrintMessage(ss.str());
+					}
 				}
 			}
 			else compCount++;
@@ -218,9 +221,11 @@ namespace KalaData::Compression
 			}
 			else
 			{
-				KalaDataCore::PrintMessage(
-					"File '" + relPath + "' is empty, storing as 0-byte entry in archive.\n",
-					MessageType::MESSAGETYPE_WARNING);
+				if (isVerboseLoggingEnabled)
+				{
+					KalaDataCore::PrintMessage(
+						"File '" + relPath + "' is empty, storing as 0-byte entry in archive.\n");
+				}
 			}
 		}
 
@@ -230,10 +235,10 @@ namespace KalaData::Compression
 
 		stringstream finishComp{};
 		finishComp << "Finished compressing folder '" + origin + "' to archive '" + target + "'!\n"
-			<< "  - total files: " << to_string(fileCount)
-			<< "  - compressed: " << to_string(compCount)
-			<< "  - stored raw: " << to_string(rawCount)
-			<< "  - empty: " << to_string(emptyCount)
+			<< "  - total files: " << to_string(fileCount) << "\n"
+			<< "  - compressed: " << to_string(compCount) << "\n"
+			<< "  - stored raw: " << to_string(rawCount) << "\n"
+			<< "  - empty: " << to_string(emptyCount) << "\n"
 			<< "  - duration: "
 			<< fixed << setprecision(2) << durationSec << " seconds\n";
 
@@ -399,10 +404,10 @@ namespace KalaData::Compression
 
 		stringstream finishDecomp{};
 		finishDecomp << "Finished decompressing archive '" + origin + "' to folder '" + target + "'!\n"
-			<< "  - total files: " << to_string(fileCount)
-			<< "  - decompressed: " << to_string(compCount)
-			<< "  - unpacked raw: " << to_string(rawCount)
-			<< "  - empty: " << to_string(emptyCount)
+			<< "  - total files: " << to_string(fileCount) << "\n"
+			<< "  - decompressed: " << to_string(compCount) << "\n"
+			<< "  - unpacked raw: " << to_string(rawCount) << "\n"
+			<< "  - empty: " << to_string(emptyCount) << "\n"
 			<< "  - duration: "
 			<< fixed << setprecision(2) << durationSec << " seconds\n";
 
