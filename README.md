@@ -34,7 +34,7 @@ KalaData supports two modes of operation:
 1. **Direct mode**  
    Launch KalaData with a command from the system shell.  
    Example:  
-   `KalaData.exe --c project_folder project.kdat`  
+   `KalaData.exe --c project_directory project.kdat`  
    This executes the command and then enters the KalaData CLI environment.
 
 2. **Interactive mode**  
@@ -48,21 +48,29 @@ Note: KalaData does not support command piping or chaining. Commands must be giv
 ## Commands
 
 ### Notes:
-  - all paths are absolute and KalaData does not take relative paths
-  - use the `-help command` command to get more info about a specific command, like `--help c`
+  - KalaData accepts relative paths to current directory (or directory set with --go) or absolute paths.
+  - the command `-help command` expects a valid command, like `--help c`
+  - the command `--go path` expects a valid path in your device
   - the command `--sm mode` expects a valid mode, like `--sm balanced`
 
 | Command          | Description                                            |
 |------------------|--------------------------------------------------------|
-| --v              | Print KalaData version                                 |
+| --v              | Prints KalaData version                                |
 | --about          | Prints the KalaData description                        |
-| --help           | List all commands                                      |
-| --help `command` | Get info about the specified command                   |
-| --sm `mode`      | Set compression/decompression mode                     |
-| --tvb            | Toggle verbosity (prints detailed logs when enabled)   |
-| --c              | Compress origin folder into target archive file path   |
-| --dc             | Decompress origin archive file into target folder path |
-| --exit           | Quit KalaData                                          |
+| --help           | Lists all commands                                     |
+| --help `command` | Gets info about the specified command                  |
+| --go `path`      | Goes to a directory on your device to be able to compress/decompress relative to that directory |
+| --root           | Navigates to system root directory                     |
+| --home           | Navigates to KalaData root directory                   |
+| --where          | Prints your current path (KalaData root or the one set with --go) |
+| --list           | Lists all files and directories in your current path (KalaData root or the one set with --go) |
+| --create `path`  | Creates a new directory at the chosen path             |
+| --delete `path`  | Deletes the file or directory at the chosen path (asks for confirmation before permanently deleting)|
+| --sm `mode`      | Sets compression/decompression mode                    |
+| --tvb            | Toggles verbosity (prints detailed logs when enabled)  |
+| --c              | Compresses origin directory into target archive file path   |
+| --dc             | Decompresses origin archive file into target directory path |
+| --exit           | Quits KalaData                                         |
 
 ---
 
@@ -133,20 +141,20 @@ compression/decompression success log additional rows:
 
 ## Compression
 
-The `--c` command takes in a folder which will be compressed into a `.kdat` file inside the target path parent folder.
+The `--c` command takes in a directory which will be compressed into a `.kdat` file inside the target path parent directory.
 
 Requirements and restrictions:
 
 Origin:
   - path must exist
-  - path must be a folder
-  - folder must not be empty
-  - folder size must not exceed 5GB
+  - path must be a directory
+  - directory must not be empty
+  - directory size must not exceed 5GB
 
 Target:
   - path must not exist
   - path must have the `.kdat` extension
-  - path parent folder must be writable
+  - path parent directory must be writable
 
 > Example: `KalaData.exe --c C:\Projects\MyApp C:\Archives\MyApp.kdat`
 
@@ -154,7 +162,7 @@ Target:
 
 ## Decompression
 
-The `--dc` command takes in a compressed `.kdat` file path which will be decompressed inside the target folder.
+The `--dc` command takes in a compressed `.kdat` file path which will be decompressed inside the target directory.
 
 Requirements and restrictions:
 
@@ -165,8 +173,8 @@ Origin:
 
 Target:
   - path must exist
-  - path must be a folder
-  - folder must be writable
+  - path must be a directory
+  - directory must be writable
 
 > Example: `KalaData.exe --dc C:\Archives\MyApp.kdat C:\Extracted\MyApp`
 
@@ -182,7 +190,7 @@ Target:
 
 ## How to build from source
 
-The compiled executable and its files will be placed to `/release` and `/debug` in the root folder relative to the build stage
+The compiled executable and its files will be placed to `/release` and `/debug` in the root directory relative to the build stage
 
 ### On Windows
 

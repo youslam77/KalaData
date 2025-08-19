@@ -27,6 +27,10 @@ namespace KalaData
 	class Core
 	{
 	public:
+		//Toggle compression verbose messages on and off
+		static void SetVerboseLoggingState(bool newState) { isVerboseLoggingEnabled = newState; }
+		static bool IsVerboseLoggingEnabled() { return isVerboseLoggingEnabled; }
+
 		//Runtime loop of KalaData
 		static void Update();
 
@@ -40,5 +44,7 @@ namespace KalaData
 
 		//Shut down KalaData, optional critical shutdown uses quick_exit
 		static void Shutdown(ShutdownState state = ShutdownState::SHUTDOWN_REGULAR);
+	private:
+		static inline bool isVerboseLoggingEnabled = false;
 	};
 }

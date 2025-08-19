@@ -14,8 +14,9 @@
 #include <map>
 #include <memory>
 
-#include "compress.hpp"
 #include "core.hpp"
+#include "command.hpp"
+#include "compress.hpp"
 
 using KalaData::Core;
 using KalaData::MessageType;
@@ -145,7 +146,7 @@ namespace KalaData
 		const string& origin,
 		const string& target)
 	{
-		isActive = true;
+		Command::SetCommandAllowState(false);
 
 		Core::PrintMessage(
 			"Starting to compress folder '" + origin + "' to archive '" + target + "'!\n");
@@ -186,7 +187,7 @@ namespace KalaData
 		const char magicVer[6] = { 'K', 'D', 'A', 'T', '0', '1' };
 		out.write(magicVer, sizeof(magicVer));
 
-		if (isVerboseLoggingEnabled)
+		if (Core::IsVerboseLoggingEnabled())
 		{
 			ostringstream ss{};
 
@@ -243,7 +244,7 @@ namespace KalaData
 				{
 					emptyCount++;
 
-					if (isVerboseLoggingEnabled)
+					if (Core::IsVerboseLoggingEnabled())
 					{
 						Core::PrintMessage(
 							"[EMPTY] '" + path(relPath).filename().string() + "'");
@@ -253,7 +254,7 @@ namespace KalaData
 				{
 					rawCount++;
 
-					if (isVerboseLoggingEnabled)
+					if (Core::IsVerboseLoggingEnabled())
 					{
 						ostringstream ss{};
 
@@ -269,7 +270,7 @@ namespace KalaData
 			{
 				compCount++;
 
-				if (isVerboseLoggingEnabled)
+				if (Core::IsVerboseLoggingEnabled())
 				{
 					ostringstream ss{};
 
@@ -333,7 +334,8 @@ namespace KalaData
 		auto saved = 100.0 - ratio;
 
 		ostringstream finishComp{};
-		if (isVerboseLoggingEnabled)
+
+		if (Core::IsVerboseLoggingEnabled())
 		{
 			finishComp 
 				<< "Finished compressing folder '" << origin << "' to archive '" << target << "'!\n"
@@ -365,14 +367,14 @@ namespace KalaData
 			finishComp.str(),
 			MessageType::MESSAGETYPE_SUCCESS);
 
-		isActive = false;
+		Command::SetCommandAllowState(true);
 	}
 
 	void Compress::DecompressToFolder(
 		const string& origin,
 		const string& target)
 	{
-		isActive = true;
+		Command::SetCommandAllowState(false);
 
 		Core::PrintMessage(
 			"Starting to decompress archive '" + origin + "' to folder '" + target + "'!\n");
@@ -420,7 +422,7 @@ namespace KalaData
 			return;
 		}
 
-		if (isVerboseLoggingEnabled)
+		if (Core::IsVerboseLoggingEnabled())
 		{
 			ostringstream ss{};
 
@@ -558,14 +560,14 @@ namespace KalaData
 			if (method == 0)
 			{
 				if (storedSize == 0
-					&& isVerboseLoggingEnabled)
+					&& Core::IsVerboseLoggingEnabled())
 				{
 					Core::PrintMessage(
 						"[EMPTY] '" + path(relPath).filename().string() + "'");
 				}
 				else
 				{
-					if (isVerboseLoggingEnabled)
+					if (Core::IsVerboseLoggingEnabled())
 					{
 						ostringstream ss{};
 
@@ -590,7 +592,7 @@ namespace KalaData
 			//LZSS: decompress storedSize to originalSize
 			else if (method == 1)
 			{
-				if (isVerboseLoggingEnabled)
+				if (Core::IsVerboseLoggingEnabled())
 				{
 					ostringstream ss{};
 
@@ -663,7 +665,7 @@ namespace KalaData
 
 		ostringstream finishDecomp{};
 
-		if (isVerboseLoggingEnabled)
+		if (Core::IsVerboseLoggingEnabled())
 		{
 			finishDecomp 
 				<< "Finished decompressing archive '" << origin << "' to folder '" << target << "'!\n"
@@ -693,7 +695,7 @@ namespace KalaData
 			finishDecomp.str(),
 			MessageType::MESSAGETYPE_SUCCESS);
 
-		isActive = false;
+		Command::SetCommandAllowState(true);
 	}
 }
 

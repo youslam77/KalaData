@@ -9,10 +9,18 @@
 #include <iomanip>
 #include <fstream>
 #include <unordered_map>
+#include <vector>
+#include <iostream>
+#include <ranges>
+#include <cctype>
+#include <algorithm>
 
 #include "core.hpp"
 #include "command.hpp"
 #include "compress.hpp"
+
+using KalaData::Core;
+using KalaData::MessageType;
 
 using std::ostringstream;
 using std::string;
@@ -24,18 +32,34 @@ using std::filesystem::is_regular_file;
 using std::filesystem::is_directory;
 using std::filesystem::file_size;
 using std::filesystem::is_empty;
+using std::filesystem::weakly_canonical;
+using std::filesystem::current_path;
+using std::filesystem::create_directories;
+using std::filesystem::remove;
+using std::filesystem::remove_all;
+using std::filesystem::directory_iterator;
 using std::filesystem::recursive_directory_iterator;
 using std::fixed;
 using std::setprecision;
 using std::ofstream;
 using std::ios;
 using std::unordered_map;
+using std::vector;
+using std::exception;
+using std::cin;
+using std::toupper;
+using std::ranges::any_of;
+using std::equal;
 
 static uint64_t GetFolderSize(const string& folderPath);
 
 static bool CanWriteToFolder(const string& folderPath);
 
 static string ConvertSizeToString(uint64_t size);
+
+static string ResolvePath(
+	const string& origin,
+	bool checkExistence = false);
 
 struct Preset
 {
@@ -52,18 +76,47 @@ static const unordered_map<string, Preset> presets =
 	{ "archive",  { KalaData::WINDOW_SIZE_ARCHIVE,  KalaData::LOOKAHEAD_ARCHIVE  } }
 };
 
+static const vector<string> restrictedFileNames
+{
+	"CON",
+	"PRN",
+	"AUX",
+	"NUL",
+
+	"COM1",
+	"COM2",
+	"COM3",
+	"COM4",
+	"COM5",
+	"COM6",
+	"COM7",
+	"COM8",
+	"COM9",
+
+	"LPT1",
+	"LPT2",
+	"LPT3",
+	"LPT4",
+	"LPT5",
+	"LPT6",
+	"LPT7",
+	"LPT8",
+	"LPT9",
+};
+
 //5GB max file size
 constexpr uint64_t maxFolderSize = 5ull * 1024 * 1024 * 1024;
+
+//where user has navigated with --go command
+static string currentPath{};
 
 namespace KalaData
 {
 	void Command::HandleCommand(vector<string> parameters)
 	{
-		if (Compress::IsActive())
+		if (!canAllowCommands
+			|| parameters.size() <= 1)
 		{
-			Core::PrintMessage(
-				"Cannot write any commands while compressing or decompressing!",
-				MessageType::MESSAGETYPE_ERROR);
 			return;
 		}
 
@@ -75,6 +128,7 @@ namespace KalaData
 			&& parameters[1] == "--v")
 		{
 			Command_Version();
+			return;
 		}
 
 		else if (parameters.size() == 2
@@ -99,64 +153,114 @@ namespace KalaData
 		}
 
 		else if (parameters.size() == 3
+			&& parameters[1] == "--go")
+		{
+			Command_Go(parameters[2]);
+			return;
+		}
+
+		else if (parameters.size() == 2
+			&& parameters[1] == "--root")
+		{
+			Command_Root();
+			return;
+		}
+
+		else if (parameters.size() == 2
+			&& parameters[1] == "--home")
+		{
+			Command_Home();
+			return;
+		}
+
+		else if (parameters.size() == 2
+			&& parameters[1] == "--where")
+		{
+			Command_Where();
+			return;
+		}
+
+		else if (parameters.size() == 2
+			&& parameters[1] == "--list")
+		{
+			Command_List();
+			return;
+		}
+
+		else if (parameters.size() == 3
+			&& parameters[1] == "--create")
+		{
+			Command_Create(parameters[2]);
+			return;
+		}
+
+		else if (parameters.size() == 3
+			&& parameters[1] == "--delete")
+		{
+			Command_Delete(parameters[2]);
+			return;
+		}
+
+		else if (parameters.size() == 3
 			&& parameters[1] == "--sm")
 		{
 			Command_SetCompressionMode(parameters[2]);
+			return;
 		}
 
 		else if (parameters.size() == 2
 			&& parameters[1] == "--tvb")
 		{
 			Command_ToggleCompressionVerbosity();
+			return;
 		}
 
 		else if (parameters.size() == 4
 			&& parameters[1] == "--c")
 		{
 			Command_Compress(parameters[2], parameters[3]);
+			return;
 		}
 
 		else if (parameters.size() == 4
 			&& parameters[1] == "--dc")
 		{
 			Command_Decompress(parameters[2], parameters[3]);
+			return;
 		}
 
 		else if (parameters.size() == 2
 			&& parameters[1] == "--exit")
 		{
 			Command_Exit();
-		}
-
-		else
-		{
-			string command{};
-
-			for (const auto& par : parameters)
-			{
-				if (par == parameters[0])
-				{
-					command = command + par;
-				}
-				else  command = command + " " + par;
-			}
-
-			string target = "KalaData.exe ";
-			size_t pos = command.find(target);
-			if (pos != string::npos)
-			{
-				command.erase(pos, target.length());
-			}
-
-			ostringstream ss{};
-
-			ss << "Unsupported command '" + command + "'! Type --help to list all commands.\n";
-
-			Core::PrintMessage(
-				ss.str(),
-				MessageType::MESSAGETYPE_ERROR);
 			return;
 		}
+
+		string command{};
+
+		for (const auto& par : parameters)
+		{
+			if (par == parameters[0])
+			{
+				command = command + par;
+			}
+			else  command = command + " " + par;
+		}
+
+		string target = "KalaData.exe ";
+		size_t pos = command.find(target);
+		if (pos != string::npos)
+		{
+			command.erase(pos, target.length());
+		}
+
+		ostringstream ss{};
+
+		ss << "Unsupported command '" + command + "'! Type --help to list all commands.\n";
+
+		Core::PrintMessage(
+			ss.str(),
+			MessageType::MESSAGETYPE_ERROR);
 	}
 
 	void Command::Command_Version()
@@ -187,8 +291,10 @@ namespace KalaData
 		ss << "====================\n\n"
 
 			<< "Notes:\n"
-			<< "  - all paths are absolute and KalaData does not take relative paths.\n"
-			<< "  - use the '-help command' command to get more info about a specific command, like '--help c'.\n"
+			<< "  - KalaData accepts relative paths to current directory (or directory set with --go) or absolute paths.\n"
+			<< "  - the command '-help command' expects a valid command, like '--help c'.\n"
+			<< "  - the commands '--go' and '--delete' expect a valid file or directory path in your device\n"
+			<< "  - the command '--create' expects a directory that does not exist\n"
 			<< "  - the command '--sm mode' expects a valid mode, like '--sm balanced'\n\n"
 
 			<< "Commands:\n"
@@ -196,6 +302,13 @@ namespace KalaData
 			<< "  --about\n"
 			<< "  --help\n"
 			<< "  --help command\n"
+			<< "  --go path\n"
+			<< "  --root\n"
+			<< "  --home\n"
+			<< "  --where\n"
+			<< "  --list\n"
+			<< "  --create path\n"
+			<< "  --delete path\n"
 			<< "  --sm mode\n"
 			<< "  --tvb\n"
 			<< "  --c\n"
@@ -213,18 +326,85 @@ namespace KalaData
 			|| commandName == "--v")
 		{
 			Core::PrintMessage("Prints the KalaData version\n");
+
+			return;
 		}
 
 		else if (commandName == "about"
 			|| commandName == "--about")
 		{
 			Core::PrintMessage("Prints the KalaData description\n");
+		
+			return;
 		}
 
 		else if (commandName == "help"
 			|| commandName == "--help")
 		{
 			Core::PrintMessage("Lists all commands\n");
+		
+			return;
+		}
+
+		else if (commandName == "go"
+			|| commandName == "--go")
+		{
+			Core::PrintMessage("Go to a directory on your device to be able to compress/decompress relative to that directory\n");
+		
+			return;
+		}
+
+		else if (commandName == "root"
+			|| commandName == "--root")
+		{
+			Core::PrintMessage("Navigate to system root directory\n");
+
+			return;
+		}
+
+		else if (commandName == "home"
+			|| commandName == "--home")
+		{
+			Core::PrintMessage("Navigate to KalaData root directory\n");
+
+			return;
+		}
+
+		else if (commandName == "where"
+			|| commandName == "--where")
+		{
+			Core::PrintMessage("Prints your current path (program default or the one set with --go)\n");
+		
+			return;
+		}
+
+		else if (commandName == "list"
+			|| commandName == "--list")
+		{
+			Core::PrintMessage("Lists all files and directories in your current path (program default or the one set with --go)\n");
+		
+			return;
+		}
+
+		else if (commandName == "create"
+			|| commandName == "--create")
+		{
+			Core::PrintMessage("Creates a new directory in your chosen path\n");
+
+			return;
+		}
+
+		else if (commandName == "delete"
+			|| commandName == "--delete")
+		{
+			ostringstream ss{};
+
+			ss << "Deletes the file or directory at your chosen path, asks for permission first. "
+				<< "Warning: the file or directory is unrecoverable after deletion!\n";
+
+			Core::PrintMessage(ss.str());
+
+			return;
 		}
 
 		else if (commandName == "sm"
@@ -263,6 +443,8 @@ namespace KalaData
 				<< "  - lookahead: " << LOOKAHEAD_ARCHIVE << "\n";
 
 			Core::PrintMessage(ss.str());
+
+			return;
 		}
 
 		else if (commandName == "tvb"
@@ -290,6 +472,8 @@ namespace KalaData
 				<< "  - empty files\n";
 
 			Core::PrintMessage(ss.str());
+
+			return;
 		}
 
 		else if (commandName == "c"
@@ -297,21 +481,23 @@ namespace KalaData
 		{
 			ostringstream ss{};
 
-			ss << "Takes in a folder which will be compressed into a '.kdat' file inside the target path parent folder.\n\n"
+			ss << "Takes in a directory which will be compressed into a '.kdat' file inside the target path parent directory.\n\n"
 				<< "Requirements and restrictions:\n\n"
 
 				<< "Origin:\n"
 				<< "  - path must exist\n"
-				<< "  - path must be a folder\n"
-				<< "  - folder must not be empty\n"
-				<< "  - folder size must not exceed 5GB\n\n"
+				<< "  - path must be a directory\n"
+				<< "  - directory must not be empty\n"
+				<< "  - directory size must not exceed 5GB\n\n"
 
 				<< "Target:\n"
 				<< "  - path must not exist\n"
 				<< "  - path must have the '.kdat' extension\n"
-				<< "  - path parent folder must be writable\n";
+				<< "  - path parent directory must be writable\n";
 
 			Core::PrintMessage(ss.str());
+
+			return;
 		}
 
 		else if (commandName == "dc"
@@ -319,7 +505,7 @@ namespace KalaData
 		{
 			ostringstream ss{};
 
-			ss << "Takes in a compressed '.kdat' file path which will be decompressed inside the target folder.\n\n"
+			ss << "Takes in a compressed '.kdat' file path which will be decompressed inside the target directory.\n\n"
 				<< "Requirements and restrictions:\n\n"
 
 				<< "Origin:\n"
@@ -329,24 +515,223 @@ namespace KalaData
 
 				<< "Target:\n"
 				<< "  - path must exist\n"
-				<< "  - path must be a folder\n"
-				<< "  - folder must be writable\n";
+				<< "  - path must be a directory\n"
+				<< "  - directory must be writable\n";
 
 			Core::PrintMessage(ss.str());
+
+			return;
 		}
 
 		else if (commandName == "exit"
 			|| commandName == "--exit")
 		{
 			Core::PrintMessage("Shuts down KalaData\n");
+
+			return;
 		}
 
-		else
+		Core::PrintMessage(
+			"Cannot get info about command '" + commandName + "' because it does not exist! Type '--help' to list all commands\n",
+			MessageType::MESSAGETYPE_ERROR);
+	}
+
+	void Command::Command_Go(const string& target)
+	{
+		string canonicalTarget = ResolvePath(target, true);
+
+		if (canonicalTarget.empty()) return;
+
+		if (canonicalTarget == currentPath)
 		{
 			Core::PrintMessage(
-				"Cannot get info about command '" + commandName + "' because it does not exist! Type '--help' to list all commands\n",
+				"Already located at the same path '" + canonicalTarget + "'!\n",
 				MessageType::MESSAGETYPE_ERROR);
+
+			return;
 		}
+
+		if (!is_directory(canonicalTarget))
+		{
+			Core::PrintMessage(
+				"Target path '" + canonicalTarget + "' is not a directory!\n",
+				MessageType::MESSAGETYPE_ERROR);
+
+			return;
+		}
+
+		currentPath = canonicalTarget;
+
+		Core::PrintMessage("Moved to directory '" + canonicalTarget + "'\n",
+			MessageType::MESSAGETYPE_SUCCESS);
+	}
+
+	void Command::Command_Root()
+	{
+		string rootDir = current_path().root_path().string();
+
+		if (currentPath == rootDir)
+		{
+			Core::PrintMessage("Already located at system root '" + currentPath + "'!\n",
+				MessageType::MESSAGETYPE_ERROR);
+
+			return;
+		}
+
+		currentPath = rootDir;
+
+		Core::PrintMessage(
+			"Navigated to system root directory '" + currentPath + "'\n",
+			MessageType::MESSAGETYPE_SUCCESS);
+	}
+
+	void Command::Command_Home()
+	{
+		if (currentPath == current_path().string())
+		{
+			Core::PrintMessage("Already located at KalaData root '" + currentPath + "'!\n",
+				MessageType::MESSAGETYPE_ERROR);
+
+			return;
+		}
+
+		currentPath = current_path().string();
+
+		Core::PrintMessage(
+			"Navigated to KalaData root '" + currentPath + "'\n",
+			MessageType::MESSAGETYPE_SUCCESS);
+	}
+
+	void Command::Command_Where()
+	{
+		if (currentPath.empty()) currentPath = current_path().string();
+
+		Core::PrintMessage("Currently located at '" + currentPath + "'\n");
+	}
+
+	void Command::Command_List()
+	{
+		if (currentPath.empty()) currentPath = current_path().string();
+
+		Core::PrintMessage("Listing all files and directories in '" + currentPath + "'\n");
+
+		for (const auto& thisPath : directory_iterator(currentPath))
+		{
+			string suffix = is_directory(path(thisPath))
+				? "/"
+				: "";
+
+			string fullName = "  " + path(thisPath).filename().string() + suffix;
+
+			Core::PrintMessage(fullName);
+		}
+	}
+
+	void Command::Command_Create(const string& target)
+	{
+		//Case-insensitive equals check
+		auto Equals = [](const string& a, const string& b)
+			{
+				return a.size() == b.size()
+					&& equal(a.begin(), a.end(), b.begin(),
+						[](unsigned char ac, unsigned char bc)
+						{
+							return toupper(ac) == toupper(bc);
+						});
+			};
+
+		string thisStem = path(target).stem().string();
+
+		if (any_of(restrictedFileNames, 
+				[&](const string& name) { return Equals(thisStem, name); }))
+		{
+			Core::PrintMessage("File name '" + target + "' is restricted on Windows!\n",
+				MessageType::MESSAGETYPE_ERROR);
+
+			return;
+		}
+
+		auto canonicalTarget = ResolvePath(target);
+
+		if (exists(canonicalTarget))
+		{
+			Core::PrintMessage("Cannot create new directory '" + canonicalTarget + "' because it already exists!\n",
+				MessageType::MESSAGETYPE_ERROR);
+
+			return;
+		}
+
+		try
+		{
+			create_directories(canonicalTarget);
+		}
+		catch (const exception& e)
+		{
+			ostringstream ss{};
+
+			ss << "Failed to create new directory! Reason: " << e.what() << "\n";
+
+			Core::PrintMessage(
+				ss.str(),
+				MessageType::MESSAGETYPE_ERROR);
+
+			return;
+		}
+
+		Core::PrintMessage(
+			"Created new directory '" + path(canonicalTarget).stem().string() + "' at '" + canonicalTarget + "'\n",
+			MessageType::MESSAGETYPE_SUCCESS);
+	}
+
+	void Command::Command_Delete(const string& target)
+	{
+		auto canonicalTarget = ResolvePath(target, true);
+
+		if (!exists(canonicalTarget)) return;
+
+		string answer{};
+
+		ostringstream ss{};
+
+		ss << "Are you sure you want to delete file or directory '" << canonicalTarget << "'?\n"
+			<< "This is permanent and your file or directory can't be recovered!\n\n"
+			<< "Type 'delete' to continue, any other answer skips the deletion.\n\n"
+
+			<< "Your answer: ";
+
+		Core::PrintMessage(ss.str());
+
+		cin >> answer;
+
+		if (answer != "delete")
+		{
+			Core::PrintMessage(
+				"Skipped the deletion of file or directory '" + canonicalTarget + "'\n");
+
+			return;
+		}
+
+		try
+		{
+			if (is_directory(canonicalTarget)) remove_all(canonicalTarget);
+			else remove(canonicalTarget);
+		}
+		catch (const exception& e)
+		{
+			ostringstream ss{};
+
+			ss << "Failed to delete file or directory! Reason: " << e.what() << "\n";
+
+			Core::PrintMessage(
+				ss.str(),
+				MessageType::MESSAGETYPE_ERROR);
+
+			return;
+		}
+
+		Core::PrintMessage(
+			"Deleted file or directory '" + canonicalTarget + "'\n",
+			MessageType::MESSAGETYPE_SUCCESS);
 	}
 
 	void Command::Command_SetCompressionMode(const string& mode)
@@ -377,152 +762,153 @@ namespace KalaData
 
 	void Command::Command_ToggleCompressionVerbosity()
 	{
-		bool state = Compress::IsVerboseLoggingEnabled();
+		bool state = Core::IsVerboseLoggingEnabled();
 		state = !state;
 
-		Compress::SetVerboseLoggingState(state);
+		Core::SetVerboseLoggingState(state);
 
 		string stateStr = state ? "true" : "false";
 
 		Core::PrintMessage(
-			"Set compression verbose logging state to '" + stateStr + "'!\n",
-			MessageType::MESSAGETYPE_SUCCESS);
+			"Set compression verbose logging state to '" + stateStr + "'!\n");
 	}
 
 	void Command::Command_Compress(
 		const string& origin,
 		const string& target)
 	{
-		if (!exists(origin))
+		if (origin == "/"
+			|| origin == "\\")
 		{
 			Core::PrintMessage(
-				"Origin path '" + origin + "' does not exist!\n",
+				"Path '" + origin + "' is not allowed as origin path!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
 			return;
 		}
 
-		if (!is_directory(origin))
+		auto canonicalOrigin = ResolvePath(origin, true);
+		auto canonicalTarget = ResolvePath(target);
+
+		if (canonicalOrigin.empty()) return;
+
+		if (!is_directory(canonicalOrigin))
 		{
 			Core::PrintMessage(
-				"Origin '" + origin + "' must be a directory!\n",
+				"Origin '" + canonicalOrigin + "' must be a directory!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
 			return;
 		}
 
-		if (is_empty(origin))
+		if (is_empty(canonicalOrigin))
 		{
 			Core::PrintMessage(
-				"Origin '" + origin + "' must not be an empty folder!\n",
+				"Origin '" + canonicalOrigin + "' must not be an empty directory!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
 			return;
 		}
 
-		uint64_t originSize = GetFolderSize(origin);
+		uint64_t originSize = GetFolderSize(canonicalOrigin);
 		if (originSize > maxFolderSize)
 		{
 			string convertedOriginSize = ConvertSizeToString(originSize);
 
 			Core::PrintMessage(
-				"Origin '" + origin + "' size '" + convertedOriginSize + "' exceeds max allowed size '5.00GB'!\n",
+				"Origin '" + canonicalOrigin + "' size '" + convertedOriginSize + "' exceeds max allowed size '5.00GB'!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
 			return;
 		}
 
-		if (exists(target))
+		if (exists(canonicalTarget))
 		{
 			Core::PrintMessage(
-				"Target '" + target + "' already exists!\n",
+				"Target '" + canonicalTarget + "' already exists!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
 			return;
 		}
 
-		if (path(target).extension().string() != ".kdat")
+		if (path(canonicalTarget).extension().string() != ".kdat")
 		{
 			Core::PrintMessage(
-				"Target path '" + target + "' must have the '.kdat' extension!\n",
+				"Target path '" + canonicalTarget + "' must have the '.kdat' extension!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
 			return;
 		}
 
-		string targetParentFolder = path(target).parent_path().string();
+		string targetParentFolder = path(canonicalTarget).parent_path().string();
 		if (!CanWriteToFolder(targetParentFolder))
 		{
 			Core::PrintMessage(
-				"Insufficient permissions to write to target parent folder '" + targetParentFolder + "'!\n",
+				"Unable to write to target parent directory '" + targetParentFolder + "'!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
 			return;
 		}
 
-		Compress::CompressToArchive(origin, target);
+		Compress::CompressToArchive(canonicalOrigin, canonicalTarget);
 	}
 
 	void Command::Command_Decompress(
 		const string& origin,
 		const string& target)
 	{
-		if (!exists(origin))
+		auto canonicalOrigin = ResolvePath(origin, true);
+		auto canonicalTarget = ResolvePath(target);
+
+		if (canonicalOrigin.empty()) return;
+
+		if (!is_regular_file(canonicalOrigin))
 		{
 			Core::PrintMessage(
-				"Origin path '" + origin + "' does not exist!\n",
+				"Origin '" + canonicalOrigin + "' must be a regular file!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
 			return;
 		}
 
-		if (!is_regular_file(origin))
+		if (path(canonicalOrigin).extension().string() != ".kdat")
 		{
 			Core::PrintMessage(
-				"Origin '" + origin + "' must be a regular file!\n",
+				"Origin '" + canonicalOrigin + "' must have the '.kdat' extension!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
 			return;
 		}
 
-		if (path(origin).extension().string() != ".kdat")
+		if (!exists(canonicalTarget))
 		{
 			Core::PrintMessage(
-				"Origin '" + origin + "' must have the '.kdat' extension!\n",
+				"Target directory '" + canonicalTarget + "' does not exist!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
 			return;
 		}
 
-		if (!exists(target))
+		if (!is_directory(canonicalTarget))
 		{
 			Core::PrintMessage(
-				"Target folder '" + target + "' does not exist!\n",
+				"Target '" + canonicalTarget + "' must be a directory!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
 			return;
 		}
 
-		if (!is_directory(target))
-		{
-			Core::PrintMessage(
-				"Target '" + target + "' must be a folder!\n",
-				MessageType::MESSAGETYPE_ERROR);
-
-			return;
-		}
-
-		string targetParentFolder = path(target).parent_path().string();
+		string targetParentFolder = path(canonicalTarget).parent_path().string();
 		if (!CanWriteToFolder(targetParentFolder))
 		{
 			Core::PrintMessage(
-				"Insufficient permissions to write to target parent folder '" + targetParentFolder + "'!\n",
+				"Unable to write to target parent directory '" + targetParentFolder + "'!\n",
 				MessageType::MESSAGETYPE_ERROR);
 
 			return;
 		}
 
-		Compress::DecompressToFolder(origin, target);
+		Compress::DecompressToFolder(canonicalOrigin, canonicalTarget);
 	}
 
 	void Command::Command_Exit()
@@ -575,4 +961,27 @@ string ConvertSizeToString(uint64_t size)
 		<< "GB";
 
 	return ss.str();
+}
+
+string ResolvePath(
+	const string& origin,
+	bool checkExistence)
+{
+	if (checkExistence
+		&& !exists(origin))
+	{
+		Core::PrintMessage(
+			"Path '" + origin + "' does not exist!\n",
+			MessageType::MESSAGETYPE_ERROR);
+
+		return "";
+	}
+
+	if (currentPath.empty()) currentPath = current_path().string();
+
+	path resolved = path(origin).is_absolute()
+		? path(origin)
+		: path(currentPath) / origin;
+
+	return weakly_canonical(resolved).string();
 }

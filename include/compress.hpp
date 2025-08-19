@@ -26,13 +26,6 @@ namespace KalaData
 	class Compress
 	{
 	public:
-		//Prevents running commands while compressing or decompressing
-		static bool IsActive() { return isActive; }
-
-		//Toggle compression verbose messages on and off
-		static void SetVerboseLoggingState(bool newState) { isVerboseLoggingEnabled = newState; }
-		static bool IsVerboseLoggingEnabled() { return isVerboseLoggingEnabled; }
-
 		//Assign a new window size value.
 		//Supported range 4KB-8MB
 		static void SetWindowSize(size_t windowSizeValue)
@@ -74,9 +67,6 @@ namespace KalaData
 			const string& origin,
 			const string& target);
 	private:
-		static inline bool isActive = false;
-		static inline bool isVerboseLoggingEnabled = false;
-
 		//Sliding window
 		static inline size_t WINDOW_SIZE = WINDOW_SIZE_FASTEST;
 
