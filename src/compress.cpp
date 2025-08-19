@@ -184,7 +184,7 @@ namespace KalaData
 		uint32_t rawCount{};
 		uint32_t emptyCount{};
 
-		const char magicVer[6] = { 'K', 'D', 'A', 'T', '0', '1' };
+		const char magicVer[6] = { 'K', 'D', 'A', 'T', KALADATA_VERSION[9], KALADATA_VERSION[11] };
 		out.write(magicVer, sizeof(magicVer));
 
 		if (Core::IsVerboseLoggingEnabled())
@@ -410,13 +410,30 @@ namespace KalaData
 			return;
 		}
 
-		//check version
+		//check version range
 		int version = stoi(string(magicVer + 4, 2));
 		if (version < 1
 			|| version > 99)
 		{
 			ForceClose(
-				"Unsupported archive version '" + to_string(version) + "' in '" + origin + "'!\n",
+				"Out of range version '" + to_string(version) + "' in archive '" + origin + "'!\n",
+				ForceCloseType::TYPE_DECOMPRESSION);
+
+			return;
+		}
+
+		//check version validity
+
+		char version_major = KALADATA_VERSION[9];
+		char version_minor = KALADATA_VERSION[11];
+
+		string thisVersion{ magicVer[4], magicVer[5] };
+		string requiredVersion{ version_major, version_minor };
+
+		if (thisVersion != requiredVersion)
+		{
+			ForceClose(
+				"Unsupported version '" + thisVersion + "' in archive '" + origin + "'! Version must be '" + requiredVersion + "'\n",
 				ForceCloseType::TYPE_DECOMPRESSION);
 
 			return;
